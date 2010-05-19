@@ -1,0 +1,70 @@
+# Copyright 2010 by le1t0@github. All rights reserved.
+Capistrano::Configuration.instance(:must_exist).load do 
+  namespace :deprec do 
+    namespace :god do
+      
+      desc "install god"
+      task :install do
+        gem2.install 'god'
+      end
+    
+      SYSTEM_CONFIG_FILES[:god] = [
+        
+        {:template => "god-init.erb",
+         :path => '/etc/init.d/god',
+         :mode => 0755,
+         :owner => 'root:root'},
+
+        {:template => "god-conf.erb",
+         :path => '/etc/god/god.conf',
+         :mode => 0755,
+         :owner => 'root:root'}
+        
+      ]
+      
+      desc <<-DESC
+      Generate god config from template. Note that this does not
+      push the config to the server, it merely generates required
+      configuration files. These should be kept under source control.            
+      The can be pushed to the server with the :config task.
+      DESC
+      task :config_gen do
+        SYSTEM_CONFIG_FILES[:god].each do |file|
+          deprec2.render_template(:god, file)
+        end
+      end
+
+      desc "Push god config files to server"
+      task :config, :roles => :god do
+        sudo "install -d /etc/god/conf.d"
+        deprec2.push_configs(:god, SYSTEM_CONFIG_FILES[:god])
+      end
+
+      desc "Start God"
+      task :start, :roles => :god do
+        send(run_method, "/etc/init.d/god start")
+      end
+
+      desc "Stop God"
+      task :stop, :roles => :god do
+        send(run_method, "/etc/init.d/god stop")
+      end
+
+      desc "Restart God"
+      task :restart, :roles => :god do
+        send(run_method, "/etc/init.d/god restart")
+      end
+
+      desc "Set God to start on boot"
+      task :activate, :roles => :god do
+        send(run_method, "update-rc.d god defaults")
+      end
+      
+      desc "Set God to not start on boot"
+      task :deactivate, :roles => :god do
+        send(run_method, "update-rc.d -f god remove")
+      end
+      
+    end 
+  end
+end
