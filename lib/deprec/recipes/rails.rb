@@ -1,4 +1,4 @@
-# Copyright 2006-2008 by Mike Bailey. All rights reserved.
+# Copyright 2006-2010 by Mike Bailey, le1t0@github. All rights reserved.
 Capistrano::Configuration.instance(:must_exist).load do 
 
   set :app_user_prefix,  'app_'
@@ -30,7 +30,7 @@ Capistrano::Configuration.instance(:must_exist).load do
     top.deprec.rails.config
     top.deprec.rails.activate_services
     top.deprec.rails.set_perms_on_shared_and_releases
-    top.deprec.web.reload
+    top.deprec.web.reload if web_server_type.to_s != 'none'
     top.deprec.rails.setup_database
   end
 
@@ -106,8 +106,8 @@ Capistrano::Configuration.instance(:must_exist).load do
         top.deprec.git.install
         top.deprec.web.install        # Uses value of web_server_type 
         top.deprec.app.install        # Uses value of app_server_type
-        top.deprec.monit.install
-        top.deprec.logrotate.install  
+        top.deprec.monit.install if use_monit # FIXME: should be generic namespace monitoring, with :none option
+        top.deprec.logrotate.install if use_logrotate # FIXME: should be generic namespace logrotation, with :none option
         
         # We not longer install database server as part of this task.
         # There is too much danger that someone will wreck an existing
@@ -125,14 +125,14 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       desc "Generate config files for rails app."
       task :config_gen do
-        top.deprec.web.config_gen_project
-        top.deprec.app.config_gen_project
+        top.deprec.web.config_gen_project if web_server_type.to_s != 'none'
+        top.deprec.app.config_gen_project if app_server_type.to_s != 'none'
       end
 
       desc "Push out config files for rails app."
       task :config do
-        top.deprec.web.config_project
-        top.deprec.app.config_project
+        top.deprec.web.config_project if web_server_type.to_s != 'none'
+        top.deprec.app.config_project if app_server_type.to_s != 'none'
       end
 
       task :create_config_dir, :roles => :app do
@@ -185,7 +185,7 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       # Setup database server.
       task :setup_db, :roles => :db, :only => { :primary => true } do
-        top.deprec.mysql.setup
+        top.deprec.mysql.setup if db_server_type.to_s == 'mysql' # FIXME: should be generic db namespace call?
       end
 
       # setup extra paths required for deployment
@@ -233,9 +233,9 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       desc "Activate web, app and monit"
       task :activate_services do
-        top.deprec.web.activate       
-        top.deprec.app.activate
-        top.deprec.monit.activate
+        top.deprec.web.activate if web_server_type.to_s != 'none'
+        top.deprec.app.activate if app_server_type.to_s != 'none'
+        top.deprec.monit.activate if use_monit # FIXME: should be generic namespace monitoring, with :none option
       end
 
       # database.yml stuff
