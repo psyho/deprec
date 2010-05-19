@@ -1,4 +1,4 @@
-# Copyright 2006-2008 by Mike Bailey. All rights reserved.
+# Copyright 2006-2010 by Mike Bailey, le1t0@github. All rights reserved.
 Capistrano::Configuration.instance(:must_exist).load do 
   
   # Set the value if not already set
@@ -25,41 +25,11 @@ Capistrano::Configuration.instance(:must_exist).load do
   # to configure, build and install the service
   SRC_PACKAGES = {} unless defined?(SRC_PACKAGES)
   
-  # Server options
-  CHOICES_RUBY_VM   = [:mri, :ree]
-  CHOICES_WEBSERVER = [:nginx, :apache, :none]
-  CHOICES_APPSERVER = [:mongrel, :webrick, :passenger, :none]
-  CHOICES_DATABASE  = [:mysql, :postgresql, :sqlite, :none]
-  
   # Service defaults
   #
-  # The defaults below are legacy values to support older deployments.
-  # Newly generated deploy.rb files have use apache, passenger and ree 
-  default :ruby_vm_type,    :mri
-  default :web_server_type, :nginx
-  default :app_server_type, :mongrel
-  default :db_server_type,  :mysql
-  #
-  # default(:web_server_type) do
-  #   Capistrano::CLI.ui.choose do |menu| 
-  #     CHOICES_WEBSERVER.each {|c| menu.choice(c)}
-  #     menu.header = "select webserver type"
-  #   end
-  # end
-  # 
-  # default(:app_server_type) do
-  #   Capistrano::CLI.ui.choose do |menu| 
-  #     CHOICES_APPSERVER.each {|c| menu.choice(c)}
-  #     menu.header = "select application server type"
-  #   end
-  # end
-  # 
-  # default(:db_server_type) do
-  #   Capistrano::CLI.ui.choose do |menu| 
-  #     CHOICES_DATABASE.each {|c| menu.choice(c)}
-  #     menu.header = "select database server type"
-  #   end
-  # end
+  Dir.glob("#{File.dirname(__FILE__)}/*").each do |entry|
+    default "#{File.basename(entry)}_choice".to_sym, :none if File.directory?(entry)
+  end  
 
   default(:application) do
     Capistrano::CLI.ui.ask "Enter name of project(no spaces)" do |q|
@@ -112,11 +82,9 @@ Capistrano::Configuration.instance(:must_exist).load do
       # e.g. deprec:web:restart => deprec:nginx:restart 
       
       
-      namespaces_to_connect = { :web => :web_server_type,
-                                :app => :app_server_type,
-                                :db  => :db_server_type,
-                                :ruby => :ruby_vm_type
-                              }
+      namespaces_to_connect = Hash[*(Dir.glob("#{File.dirname(__FILE__)}/*").collect do |entry|
+        [ File.basename(entry).to_sym, "#{File.basename(entry)}_choice".to_sym ] if File.directory?(entry)
+      end.compact.flatten)]
       metaclass = class << self; self; end # XXX unnecessary?
       namespaces_to_connect.each do |server, choice|
         server_type = send(choice).to_sym
