@@ -1,4 +1,4 @@
-# Copyright 2006-2008 by Mike Bailey. All rights reserved.
+# Copyright 2006-2010 by Mike Bailey, le1t0@github. All rights reserved.
 Capistrano::Configuration.instance(:must_exist).load do 
   namespace :deprec do
     namespace :nagios do
@@ -11,6 +11,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       set :nagios_cmd_group, 'nagcmd' # Submit external commands through the web interface
       set :nagios_htpasswd_file, '/usr/local/nagios/etc/htpasswd.users'
       # default :application, 'nagios' 
+      set :nagios_ssh_key, nil
       
       SRC_PACKAGES[:nagios] = {
         :url => "http://prdownloads.sourceforge.net/sourceforge/nagios/nagios-3.2.0.tar.gz",
@@ -213,6 +214,35 @@ Capistrano::Configuration.instance(:must_exist).load do
         deprec2.install_from_src(SRC_PACKAGES[:nagios_plugins], src_dir)        
       end
       
+      desc "Install user plugins for nagios from config/nagios_plugins/plugins in user's project"
+      task :install_custom do
+        remote_path = File.join('/', 'usr', 'local', 'nagios', 'libexec')
+        plugins_path = File.join('config', 'nagios_plugins', 'plugins')
+        Dir.new(plugins_path).entries.each do |entry|
+          remote_plugin = File.join(remote_path, entry)
+          plugin = File.join(plugins_path, entry)
+          if File.file?(plugin)
+            std.su_put File.read(plugin), remote_plugin, '/tmp', :mode => 0755
+          end
+        end
+      end
+
+      desc "configure ssh + sudo access for nagios_user"
+      task :config_access do
+        deprec2.append_to_file_if_missing('/etc/sudoers', "#{nagios_user} ALL=(root) NOPASSWD:/usr/bin/killall")
+        deprec2.append_to_file_if_missing('/etc/sudoers', "#{nagios_user} ALL=(root) NOPASSWD:/bin/kill")
+        deprec2.append_to_file_if_missing('/etc/sudoers', "#{nagios_user} ALL=(root) NOPASSWD:/sbin/iptables")
+        deprec2.append_to_file_if_missing('/etc/sudoers', "#{nagios_user} ALL=(root) NOPASSWD:/bin/cat")
+        sudo "mkdir -p /home/#{nagios_user}/.ssh"
+        sudo "chmod 700 /home/#{nagios_user}/.ssh"
+        if nagios_ssh_key
+          sudo "echo '#{nagios_ssh_key}' >> /tmp/authorized_keys_file_for_nagios_user.tmp"
+        end
+        sudo "mv /tmp/authorized_keys_file_for_nagios_user.tmp /home/#{nagios_user}/.ssh/authorized_keys"
+        sudo "chmod 600 /home/#{nagios_user}/.ssh/authorized_keys"
+        sudo "chown -R nagios:nagios /home/#{nagios_user}/.ssh"
+      end
+
       # Install dependencies for nagios plugins
       task :install_deps do
         apt.install( {:base => %w(libmysqlclient15-dev)}, :stable )
