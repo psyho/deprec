@@ -26,6 +26,7 @@ Capistrano::Configuration.instance(:must_exist).load do
   set :monit_webserver_allowed_hosts_and_networks, %w(localhost)
   set :monit_webserver_auth_user, 'admin'
   set :monit_webserver_auth_pass, 'monit'
+  set :use_monit, true # FIXME: should be generic namespace monitoring, with :none option
   
   # Upstream changes: http://www.tildeslash.com/monit/dist/CHANGES.txt  
   # Ubuntu package version = monit-4.8.1  

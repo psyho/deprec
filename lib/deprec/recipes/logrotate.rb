@@ -3,6 +3,8 @@ Capistrano::Configuration.instance(:must_exist).load do
   namespace :deprec do 
     namespace :logrotate do
 
+      set :use_logrotate, true # FIXME: should be generic namespace logrotation, with :none option
+
       # Install      
 
       desc "Install logrotate"
