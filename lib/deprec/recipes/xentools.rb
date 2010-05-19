@@ -1,4 +1,4 @@
-# Copyright 2006-2008 by Mike Bailey. All rights reserved.
+# Copyright 2006-2010 by Mike Bailey, le1t0@github. All rights reserved.
 Capistrano::Configuration.instance(:must_exist).load do 
   namespace :deprec do
     namespace :xentools do
@@ -48,6 +48,32 @@ Capistrano::Configuration.instance(:must_exist).load do
           :mode => 0755,
           :owner => 'root:root'},
          
+         # bugfix: #/bin/sh -> #!/bin/sh
+         # bugfix: $i => $1
+         {:template => "100-ubuntu-setup",
+          :path => '/usr/lib/xen-tools/gutsy.d/100-ubuntu-setup',
+          :mode => 0755,
+          :owner => 'root:root'},
+
+         # bugfix: make sure serial device is created and correct file is edited (/etc/inittab is not used anymore!)
+         {:template => "30-disable-gettys",
+          :path => '/usr/lib/xen-tools/gutsy.d/30-disable-gettys',
+          :mode => 0755,
+          :owner => 'root:root'},
+
+         # bugfix: removed serial device code, since that's already performed in 30-disable-gettys
+         # bugfix: #/bin/sh -> #!/bin/sh
+         {:template => "31-ubuntu-setup",
+          :path => '/usr/lib/xen-tools/gutsy.d/31-ubuntu-setup',
+          :mode => 0755,
+          :owner => 'root:root'},
+
+         # added script for user adjustments to debootstrap results
+         # modify this file inside your project (i.e. not in deprec itself) to added your own xen-tools steps
+         {:template => "98-custom",
+          :path => '/usr/lib/xen-tools/gutsy.d/98-custom',
+          :mode => 0755,
+          :owner => 'root:root'}
       ]
       
       task :initial_config, :roles => :dom0 do

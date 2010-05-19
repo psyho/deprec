@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+#  This script setups the ubuntu guests up properly.
+#
+
+prefix=$1
+
+#
+#  Source our common functions
+#
+if [ -e /usr/lib/xen-tools/common.sh ]; then
+   . /usr/lib/xen-tools/common.sh
+else
+   . ./hooks/common.sh
+fi
+
+# add your custom commands here
