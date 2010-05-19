@@ -198,6 +198,14 @@ module Deprec2
     END
   end
 
+  def substitute_in_file(filename, old_value, new_value, sep_char='/')
+    sudo <<-END
+    sh -c "
+    perl -p -i -e 's#{sep_char}#{old_value}#{sep_char}#{new_value}#{sep_char}' #{filename}
+    "
+    END
+  end
+
   # create new user account on target system
   def useradd(user, options={})
     options[:shell] ||= '/bin/bash' # new accounts on ubuntu 6.06.1 have been getting /bin/sh
