@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+#  This script setups the ubuntu guests up properly.
+#
+
+
+prefix=$1
+
+#
+#  Source our common functions
+#
+if [ -e /usr/lib/xen-tools/common.sh ]; then
+   . /usr/lib/xen-tools/common.sh
+else
+   . ./hooks/common.sh
+fi
+
+chroot ${prefix} /usr/sbin/update-rc.d -f hwclock.sh remove
+chroot ${prefix} /usr/sbin/update-rc.d -f hwclockfirst.sh remove
+chroot ${prefix} rm -f /etc/udev/rules.d/85-hwclock.rules
+chroot ${prefix} ln -sf /bin/true /sbin/hwclock
+chroot ${prefix} mknod /dev/xvda b 202 0
+chroot ${prefix} mknod /dev/xvdb b 202 16
+chroot ${prefix} mknod /dev/xvdc b 202 32
+chroot ${prefix} mknod /dev/xvdd b 202 48
+
+for i in 1 2 3 4 5 6 7 8 9; do 
+      chroot ${prefix} mknod /dev/xvda$i b 202 $i
+      chroot ${prefix} mknod /dev/xvdb$i b 202 $i
+      chroot ${prefix} mknod /dev/xvdc$i b 202 $i
+      chroot ${prefix} mknod /dev/xvdd$i b 202 $i
+done 

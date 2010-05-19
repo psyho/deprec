@@ -1,7 +1,30 @@
-# Copyright 2006-2008 by Mike Bailey. All rights reserved.
+def handle_xen_images(&block)
+  do_xen_images = (ENV['ONLY'] || '').split(',')
+  xen_images.each do |xen_image|
+    next if do_xen_images.size > 0 && !do_xen_images.include?(xen_image[:hostname])
+    yield(xen_image)
+  end
+end
+
+# Copyright 2006-2010 by Mike Bailey, le1t0@github. All rights reserved.
 Capistrano::Configuration.instance(:must_exist).load do 
   namespace :deprec do
     namespace :xen do
+      
+      # define images to create, i.e.:
+      # set :xen_images, [
+      # {
+      #   :lvm => 'mylvm',
+      #   :gateway => '10.0.0.1',
+      #   :netmask => '255.255.0.0',
+      #   :size => '15Gb',
+      #   :memory => '1Gb',
+      #   :swap => '2Gb',
+      #   :hostname => 'rails1',
+      #   :ip => '10.0.2.1',
+      #   :mac => '00:16:3e:00:00:01'
+      # } ]
+      set :xen_images, []            
       
       set :xen_volume_group_name, 'xendisks'
       # Config variables for migration
@@ -64,7 +87,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         #  :path => '/etc/init.d/xend',
         #  :mode => 0755,
         #  :owner => 'root:root'}
-         
+                 
       ]
       
       desc "Push Xen config files to server"
@@ -198,6 +221,69 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       task :touch_hwclock do
         sudo "touch /etc/init.d/hwclock.sh"
+      end
+      
+      desc "Create Xen images"
+      task :create_images, :roles => :dom0 do
+        handle_xen_images do |xen_image|
+          args = []
+          vcpus = xen_image.delete(:vcpus)
+          cpus = xen_image.delete(:cpus)
+          xen_image.each do |k,v|
+            args << "--#{k}='#{v}'"
+          end
+          cmd = "sh -c \"[ -e /etc/xen/#{xen_image[:hostname]}.cfg ] || /usr/bin/xen-create-image #{args.join(' ')}\""
+          sudo cmd
+          deprec2.append_to_file_if_missing("/etc/xen/#{xen_image[:hostname]}.cfg", "vcpus = '#{vcpus}'") unless vcpus.nil?
+          deprec2.append_to_file_if_missing("/etc/xen/#{xen_image[:hostname]}.cfg", "cpus = '#{cpus}'") unless cpus.nil?
+        end
+        top.deprec.xen.auto_start_images
+      end
+
+      desc "Make links for xen image configs to be started automatically"
+      task :auto_start_images, :roles => :dom0 do
+        handle_xen_images do |xen_image|
+          cmd = "sh -c \"ln -nsf /etc/xen/#{xen_image[:hostname]}.cfg /etc/xen/auto/#{xen_image[:hostname]}.cfg\""
+          sudo cmd
+        end
+      end
+
+      desc "Make links for xen image configs to be started automatically"
+      task :undo_auto_start_images, :roles => :dom0 do
+        handle_xen_images do |xen_image|
+          cmd = "sh -c \"rm -f /etc/xen/auto/#{xen_image[:hostname]}.cfg\""
+          sudo cmd
+        end
+      end
+
+      desc "Start Xen images"
+      task :start_images, :roles => :dom0 do
+        handle_xen_images do |xen_image|
+          cmd = "sh -c '/usr/sbin/xm create #{xen_image[:hostname]}.cfg 1>/dev/null ; true'"
+          sudo cmd
+        end
+      end
+
+      desc "Show configs of all installed VMs"
+      task :show_vm_configs do
+        all_data = ""
+        sudo "grep -v '^$' /etc/xen/*.cfg | awk -v h=$(hostname) '{ print h\":\"$0; }'" do |channel, stream, data|
+          all_data += data.strip
+        end
+        datalines = all_data.split("\n")
+        datahashes = datalines.collect { |line| a = line.split(":", 3) ; { :host => a[0], :vm => a[1].gsub(/^\/etc\/xen\//, '').gsub(/\.cfg$/, ''), :line => a[2] } }
+        datahashes2 = {}
+        datahashes.each do |dh|
+          datahashes2[dh[:host]] ||= {}
+          datahashes2[dh[:host]][dh[:vm]] ||= ""
+          datahashes2[dh[:host]][dh[:vm]] << dh[:line] + "\n" unless dh[:line] =~ /^(\s*|\s*#.*)$/
+        end
+        datahashes2.each do |host, vm_files|
+          vm_files.each do |vm, file|
+            puts "#{host}:#{vm}"
+            puts file.gsub(/\[\s+([^\s\]]+)\s+([^\s\]]+)\s+\]/, '[\1\2]').gsub(/(^|\n)(\s*)([^\s=]+)(\s*)=(\s*)([^\s=].*[^\s=]?)(\s*)(\n|$)/, '\1\3=\6\8')
+          end
+        end
       end
       
     end

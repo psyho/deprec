@@ -198,6 +198,7 @@ broadcast = 192.168.1.255
 #
 kernel      = /boot/vmlinuz-`uname -r`
 initrd      = /boot/initrd.img-`uname -r`
+modules		= /lib/modules/`uname -r`
 
 #
 #  The architecture to use when using debootstrap, rinse, or rpmstrap.
@@ -207,6 +208,7 @@ initrd      = /boot/initrd.img-`uname -r`
 #
 # arch=[i386|amd64]
 #
+arch=amd64
 
 #
 # The default mirror for debootstrap to install Debian-derived distributions
