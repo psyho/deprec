@@ -1,0 +1,171 @@
+#!/bin/bash
+# Copyright 2009-2010 by le1t0@github. All rights reserved.
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin:/usr/local/sbin
+DRYRUN="NO" # Set to exactly YES to enable dry runs
+IPTABLES="/sbin/iptables"
+IPTABLES_SAVE="/sbin/iptables-save"
+ENABLED=1
+
+test -x $IPTABLES || exit 0
+
+if [ -e /etc/default/firewall ]; then
+	. /etc/default/firewall
+fi
+
+test "$ENABLED" != "0" || exit 0
+
+if [ "$DRYRUN" = "YES" ] ; then
+	IPTABLES="echo ${IPTABLES}"
+fi
+
+[ -f /etc/default/rcS ] && . /etc/default/rcS
+. /lib/lsb/init-functions
+
+function flush_rules () {
+	if [ -x $IPTABLES_SAVE ]; then
+		tmpfile="/tmp/.firewall.save.$(date +"%Y%m%d%H%M%S").tmp"
+		# save current firewall FORWARD rules with physdev-in, these are necessary for the functioning of xen
+		$IPTABLES_SAVE -t filter | perl -ne "m/^-A FORWARD/ && m/physdev-in/ && print \"${IPTABLES} \" . \$_" > $tmpfile
+	fi
+	# flush default chains
+	$IPTABLES -F -t nat
+	$IPTABLES -F
+	# delete all custom chains
+	$IPTABLES -X
+	# source, re-apply and remove saved rules of above
+	if [ -x $IPTABLES_SAVE ]; then
+		. $tmpfile
+		rm -f $tmpfile
+	fi
+}
+
+function define_forwards () {
+  for forward in $forwards ; do {
+    proto="$(echo $forward | cut -d ';' -f 2)"
+	localip="$(echo $forward | cut -d '>' -f 1 | cut -d ':' -f 1)"
+    srcport="$(echo $forward | cut -d '>' -f 1 | cut -d ':' -f 2)"
+    destip="$(echo $forward | cut -d ';' -f 1 | cut -d '>' -f '2' | cut -d ':' -f 1)"
+    destport="$(echo $forward | cut -d ';' -f 1 | cut -d '>' -f '2' | cut -d ':' -f 2)"
+    $IPTABLES -t nat -A PREROUTING -p $proto -d $localip --dport $srcport -j DNAT --to $destip:$destport
+	$IPTABLES -A FORWARD -p $proto -d $destip --dport $destport -j ACCEPT
+  } ; done
+}
+
+function set_default_policies () {
+	$IPTABLES --policy INPUT $1
+	$IPTABLES --policy OUTPUT $2
+	$IPTABLES --policy FORWARD $3
+}
+
+function set_default_rules () {
+	# Allow unlimited traffic on the loopback interface
+	$IPTABLES -A INPUT -i lo -j ACCEPT
+	$IPTABLES -A OUTPUT -o lo -j ACCEPT
+
+	# Previously initiated and accepted exchanges bypass rule checking
+	$IPTABLES -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+	# Allow unlimited outbound traffic
+	$IPTABLES -A OUTPUT -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+}
+
+# don't call parse_sources directly! It's called by set_allowed_rules
+function parse_sources () {
+	for sourcedef in $1 ; do {
+		parse_targets "$2" "-s ${sourcedef}"
+	} ; done
+}
+
+# don't call parse_targets directly! It's called by set_allowed_rules
+function parse_targets () {
+	sourcedef="$2"
+	for targetdef in $1 ; do {
+		protocols="$(echo $targetdef | awk -F ":" '{ print $1; }' | sed 's/,/ /g')"
+		ports="$(echo $targetdef | awk -F ":" '{ print $2; }' | sed 's/,/ /g')"
+		for protocol in ${protocols} ; do {
+			if [ -z "${ports}" ] ; then
+				$IPTABLES -A INPUT -p ${protocol} ${sourcedef} -m state --state NEW -j ACCEPT ;
+			else
+				for port in ${ports} ; do {
+					OPT="--dport"
+					[ "$protocol" = "icmp" ] && OPT="--icmp-type"
+					$IPTABLES -A INPUT -p ${protocol} ${sourcedef} -m state --state NEW $OPT ${port} -j ACCEPT ;
+				} ; done
+			fi
+		} ; done
+	} ; done
+}
+
+function set_allowed_rules () {
+	for ruledef in ${allowed} ; do {
+		target="$(echo $ruledef | awk -F "@" '{ print $1; }' | sed 's/;/ /g')"
+		source="$(echo $ruledef | awk -F "@" '{ print $2; }' | sed 's/,/ /g')"
+		if [ -z "${source}" ] ; then
+			parse_targets "$target"
+		else
+			parse_sources "$source" "$target"
+		fi
+	} ; done	
+}
+
+function set_proc_variables () {
+	# Kernel monitoring support
+	# More information:
+	# /usr/src/linux-`uname -r`/Documentation/networking/ip-sysctl.txt
+	# http://www.linuxgazette.com/book/view/1645
+	# http://www.spirit.com/Network/net0300.html
+
+	# Drop ICMP echo-request messages sent to broadcast or multicast addresses
+	echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
+
+	# Drop source routed packets
+	echo 0 > /proc/sys/net/ipv4/conf/all/accept_source_route
+
+	# Enable TCP SYN cookie protection from SYN floods
+	echo 1 > /proc/sys/net/ipv4/tcp_syncookies
+
+	# Don't accept ICMP redirect messages
+	echo 0 > /proc/sys/net/ipv4/conf/all/accept_redirects
+
+	# Don't send ICMP redirect messages
+	echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
+
+	# Enable source address spoofing protection
+	echo 1 > /proc/sys/net/ipv4/conf/all/rp_filter
+
+	# Log packets with impossible source addresses
+	echo 1 > /proc/sys/net/ipv4/conf/all/log_martians	
+}
+
+function firewall_start () {
+	set_proc_variables
+	flush_rules
+	set_default_policies DROP ACCEPT ACCEPT
+	define_forwards
+	set_default_rules
+	set_allowed_rules	
+}
+
+function firewall_stop () {
+	flush_rules
+	set_default_policies ACCEPT ACCEPT ACCEPT	
+}
+
+case "$1" in
+start)
+	firewall_start
+	;;
+stop)
+	firewall_stop
+	;;
+reload|force-reload)
+	firewall_start
+	;;
+restart)
+	firewall_start
+	;;
+*)
+	echo "Usage: /etc/init.d/firewall {start|stop|reload|restart}"
+	exit 3
+	;;
+esac

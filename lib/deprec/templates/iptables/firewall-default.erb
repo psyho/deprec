@@ -1,0 +1,13 @@
+# define tcp ports allowed for the world: "tcp:80,443"
+# define non-tcp/udp/icmp protocols allowed for the world: "pptp"
+# define tcp/udp ports allowed for specific networks/IPs: "tcp:389;udp:514@10.0.1.2,192.168.0.0/24 tcp,udp:22@192.168.0.3"
+# define non-tcp/udp/icmp protocols allowed for specific networks/IPs: "vrrp@192.168.0.0/24"
+# example: allowed="tcp:80,443 udp:138 pptp tcp:21,443@192.168.0.0/24 tcp:389;udp:514@10.0.1.2,10.0.1.5 vrrp@192.168.0.0/24 gre@10.0.1.2"
+allowed="<%= iptables_allowed %>"
+
+# example: forwards="192.168.0.1:8080>192.168.0.2:80;tcp 192.168.0.1:514>192.168.0.2:514;udp"
+forwards="<%= iptables_forwards %>"
+
+DRYRUN="NO" # Set to exactly YES to enable dry runs
+IPTABLES="<%= iptables_binary %>"
+IPTABLES_SAVE="<%= iptables_save_binary %>"
