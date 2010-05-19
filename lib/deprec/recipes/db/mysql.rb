@@ -1,10 +1,27 @@
-# Copyright 2006-2008 by Mike Bailey. All rights reserved.
+# Copyright 2006-2010 by Mike Bailey, le1t0@github. All rights reserved.
+
+def run_mysql_command(command, user = "root", password = nil, database=nil)
+  database = database.nil? ? "" : " #{database}"
+  password = password.nil? ? "" : " -p #{password}"
+  run "echo \"#{command}\" | mysql -u #{user} #{password} #{database}"
+end
+
 Capistrano::Configuration.instance(:must_exist).load do 
   namespace :deprec do
     namespace :mysql do
       
       set :mysql_admin_user, 'root'
       set(:mysql_admin_pass) { Capistrano::CLI.password_prompt "Enter database password for '#{mysql_admin_user}':"}
+
+      SRC_PACKAGES[:percona_backup] = {
+        :filename => 'xtrabackup-1.0.tar.gz',   
+        :dir => 'xtrabackup-1.0',  
+        :url => "http://www.percona.com/mysql/xtrabackup/1.0/binary/xtrabackup-1.0.tar.gz",
+        :unpack => "tar zxf xtrabackup-1.0.tar.gz;",
+        :configure => 'echo > /dev/null;',
+        :make => 'echo > /dev/null;',
+        :install => 'mv /usr/local/src/xtrabackup-1.0/bin/* /usr/local/bin/;'
+      }
       
       # Installation
       
@@ -19,6 +36,12 @@ Capistrano::Configuration.instance(:must_exist).load do
       # Install dependencies for Mysql
       task :install_deps, :roles => :db do
         apt.install( {:base => %w(mysql-server mysql-client libmysqlclient15-dev)}, :stable )
+      end
+      
+      desc "Install percona backup utility"
+      task :install_percona_backup, :roles => :db do
+        deprec2.download_src(SRC_PACKAGES[:percona_backup], src_dir)
+        deprec2.install_from_src(SRC_PACKAGES[:percona_backup], src_dir)
       end
       
       # Configuration
@@ -104,6 +127,38 @@ Capistrano::Configuration.instance(:must_exist).load do
              channel.send_data "#{mysql_admin_pass}\n"
            end
         end
+      end
+      
+      namespace :utils do
+
+        task :show_slave_status, :roles => :db do
+          run_mysql_command("SHOW SLAVE STATUS\\G")
+        end
+
+        task :show_master_status, :roles => :db do
+          run_mysql_command("SHOW MASTER STATUS;")
+        end
+
+        task :show_status, :roles => :db do
+          run_mysql_command("SHOW STATUS;")
+        end
+
+        task :show_variables, :roles => :db do
+          run_mysql_command("SHOW VARIABLES;")
+        end
+
+        task :show_global_variables, :roles => :db do
+          run_mysql_command("SHOW GLOBAL VARIABLES;")
+        end
+
+        task :start_slave, :roles => :db do
+          run_mysql_command("START SLAVE;")
+        end
+
+        task :stop_slave, :roles => :db do
+          run_mysql_command("STOP SLAVE;")
+        end
+
       end
             
     end
