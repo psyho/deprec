@@ -1,22 +1,21 @@
 require 'rubygems' 
 
 SPEC = Gem::Specification.new do |s|
-  s.name = 'deprec'
-  s.version = '2.1.6'
+  s.name = 'le1t0-deprec'
+  s.version = '2.1.6.001'
   
-  s.authors = ['Mike Bailey']
+  s.authors = ['Le1t0']
   s.description = <<-EOF
       This project provides libraries of Capistrano tasks and extensions to 
       remove the repetative manual work associated with installing services 
       on linux servers.
   EOF
-  s.email = 'mike@bailey.net.au'
-  s.homepage = 'http://www.deprec.org/'
-  s.rubyforge_project = 'deprec'
+  s.email = 'dev@ewout.to'
+  s.homepage = 'http://github.com/le1t0/deprec'
   s.summary = 'deployment recipes for capistrano'
 
   s.require_paths = ['lib']
-  s.add_dependency('capistrano', '> 2.5.0')
+  s.add_dependency('le1t0-capistrano', '> 2.5.0')
   candidates = Dir.glob("{bin,docs,lib}/**/*") 
   candidates.concat(%w(CHANGELOG COPYING LICENSE README THANKS))
   s.files = candidates.delete_if do |item| 

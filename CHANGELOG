@@ -1,5 +1,39 @@
 # deprec changelog
 
+= 2.1.6.001 (May 19, 2010)
+
+* add 3ware-raid
+* add aspell
+* add cap : some useful tasks, capistrano related
+* add default-task-stubs : make sure config_gen/install/config/etc can always be called on all recipes
+* add drbd
+* add dummy : useful for testing capistrano task flow and profiles
+* add glusterfs
+* add god
+* add imagemagick
+* add iptables, including firewall script, configurable in one line
+* add java
+* add keepalived
+* add ldap
+* add mongodb
+* add mysql-proxy
+* add profiles : automate a lot of tasks in one profile + keep track of progress (restarting where you left off)
+* add redhat-cluster
+* add redis
+* add rvm
+* add s3utils
+* add sphinx-alternatives : add thinking sphinx + choice
+* add tsung
+* fix rails-recipe : don't assume monit and logrotate are always used, don't start/restart webserver if :none was selected
+* modify alternatives-registration : automate registration of alternatives, instead of needing manual coding
+* modify mysql : some useful control and status tasks
+* modify nagios : add support for custom plugins
+* modify passenger : use passenger gem for installation
+* modify recipe-loading : automate loading of recipes instead of needing manual coding
+* modify ssh : add configuration of ssh keys on servers
+* modify ubuntu : add useful tasks
+* modify xen : add VM creation and control tasks
+
 = 2.1.6 (Mar  3, 2009)
 
 * monit-5.1.1
