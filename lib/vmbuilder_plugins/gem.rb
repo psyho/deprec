@@ -29,6 +29,7 @@ module Gem
   #
   GEM_INSTALL="gem install --no-rdoc --no-ri"
   GEM_UPDATE=GEM_INSTALL.sub("install", "update")
+  GEM_UNINSTALL="gem uninstall"  
 
   # Upgrade the *gem* system to the latest version. Runs via *sudo*
   def update_system
@@ -53,6 +54,15 @@ module Gem
   #  
   def install(packages, version=nil)
     send(run_method,"#{GEM_INSTALL} #{if version then '-v '+version.to_s end} #{packages.to_a.join(' ')}")
+  end
+
+  # Uninstalls the gems detailed in +packages+, selecting version +version+ if
+  # specified.
+  #
+  # +packages+ can be a single string or an array of strings.
+  #  
+  def uninstall(packages, version=nil)
+    send(run_method,"#{GEM_UNINSTALL} #{if version then '-v '+version.to_s end} #{packages.to_a.join(' ')}")
   end
 
   # Auto selects a gem from a list and installs it.
