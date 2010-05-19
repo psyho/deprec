@@ -1,8 +1,18 @@
-# Copyright 2006-2008 by Mike Bailey. All rights reserved.
+# Copyright 2006-2010 by Mike Bailey, le1t0@github. All rights reserved.
 Capistrano::Configuration.instance(:must_exist).load do 
   namespace :deprec do
     namespace :ssh do
       
+      # hash of :user => :ssh_key combinations
+      # :ssh_*_keys can be:
+      # - one key (a string)
+      # - an array of keys
+      set :ssh_user_keys, { }
+      set :ssh_host_keys, { }
+      # an array of symbols or strings containing user_names/host_names as defined in :ssh_*_keys
+      set :ssh_users, [ ]
+      set :ssh_hosts, [ ]
+
       SYSTEM_CONFIG_FILES[:ssh] = [
         
         {:template => "sshd_config.erb",
@@ -33,6 +43,32 @@ Capistrano::Configuration.instance(:must_exist).load do
         restart
       end
 
+      task :set_access do
+        if ssh_users.size > 0
+          run "rm -f ~/.ssh/authorized_keys.new"
+          ssh_users.each do |ssh_user|
+            keys = [ssh_user_keys[ssh_user]].flatten
+            keys.each do |ssh_key|
+              deprec2.append_to_file_if_missing('~/.ssh/authorized_keys.new', ssh_key)
+            end
+          end
+          run "cp ~/.ssh/authorized_keys ~/.ssh/authorized_keys.bak"
+          run "mv ~/.ssh/authorized_keys.new ~/.ssh/authorized_keys"
+        end
+
+        if ssh_hosts.size > 0
+          run "rm -f ~/.ssh/known_hosts.new"
+          ssh_hosts.each do |ssh_user|
+            keys = [ssh_host_keys[ssh_user]].flatten
+            keys.each do |ssh_key|
+              deprec2.append_to_file_if_missing('~/.ssh/known_hosts.new', ssh_key)
+            end
+          end
+          run "cp ~/.ssh/known_hosts ~/.ssh/known_hosts.bak"
+          run "mv ~/.ssh/known_hosts.new ~/.ssh/known_hosts"
+        end
+      end
+      
       desc "Start ssh"
       task :start do
         send(run_method, "/etc/init.d/ssh reload")
