@@ -13,17 +13,37 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       # define images to create, i.e.:
       # set :xen_images, [
-      # {
-      #   :lvm => 'mylvm',
-      #   :gateway => '10.0.0.1',
-      #   :netmask => '255.255.0.0',
-      #   :size => '15Gb',
-      #   :memory => '1Gb',
-      #   :swap => '2Gb',
-      #   :hostname => 'rails1',
-      #   :ip => '10.0.2.1',
-      #   :mac => '00:16:3e:00:00:01'
-      # } ]
+      #   {
+      #     :hostname => 'appserver',
+      #     :lvm => 'mylvm',
+      #     :gateway => '10.0.0.1',
+      #     :netmask => '255.255.0.0',
+      #     :size => '15Gb',
+      #     :memory => '1Gb',
+      #     :swap => '2Gb',
+      #     :ip => '10.0.2.1',
+      #     :mac => '00:16:3e:00:00:01',
+      #     :vcups => 3, # specify amount of vcpus to use, this will be put in the VM config in /etc/xen/
+      #     :cpus => '1,3,6', # specify list of cpus to use, this will be put in the VM config in /etc/xen/
+      #     :arch => 'i386' # specify to create an i386 VM if you have a x86_64 host for example; optional.
+      #   },
+      #   {
+      #     :hostname => 'db',
+      #     :lvm => 'mylvm',
+      #     :gateway => '10.0.0.1',
+      #     :netmask => '255.255.0.0',
+      #     :size => '15Gb',
+      #     :memory => '1Gb',
+      #     :swap => '2Gb',
+      #     :ip => '10.0.2.1',
+      #     :mac => '00:16:3e:00:00:01',
+      #     :vcups => 3, # specify amount of vcpus to use, this will be put in the VM config in /etc/xen/
+      #     :cpus => '1,3,6', # specify list of cpus to use, this will be put in the VM config in /etc/xen/
+      #   } 
+      # ]
+      # Options in the hash above will be sent as is to the xen-create-image command, any options that xen-create-image
+      # accepts you can add there. Additionally the options :vcpus and :cpus are accepted, which are stripped out before
+      # calling xen-create-image, and put into the resulting xen VM configuration file.
       set :xen_images, []            
       
       set :xen_volume_group_name, 'xendisks'
@@ -223,6 +243,12 @@ Capistrano::Configuration.instance(:must_exist).load do
         sudo "touch /etc/init.d/hwclock.sh"
       end
       
+      # create new xen images, based on configuration in :xen_images capistrano variable (see above)
+      # a subselection of images can be created by using the ONLY=".." environment variable:
+      #
+      # $ cap deprec:xen:create_images ONLY="appserver"
+      #
+      # The images to create are matched on the :hostname value in :xen_images
       desc "Create Xen images"
       task :create_images, :roles => :dom0 do
         handle_xen_images do |xen_image|
@@ -240,6 +266,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         top.deprec.xen.auto_start_images
       end
 
+      # Same explanation as for create_images, but in this case for registering images to be auto-started at host sys boot up
       desc "Make links for xen image configs to be started automatically"
       task :auto_start_images, :roles => :dom0 do
         handle_xen_images do |xen_image|
@@ -248,6 +275,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         end
       end
 
+      # Same explanation as for create_images, but in this case for unregistering images to be auto-started at host sys boot up
       desc "Make links for xen image configs to be started automatically"
       task :undo_auto_start_images, :roles => :dom0 do
         handle_xen_images do |xen_image|
@@ -256,6 +284,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         end
       end
 
+      # Same explanation as for create_images, but in this case for starting images
       desc "Start Xen images"
       task :start_images, :roles => :dom0 do
         handle_xen_images do |xen_image|
@@ -264,6 +293,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         end
       end
 
+      # show configs of all registered VMs on host system, use grep to get certain info fields
       desc "Show configs of all installed VMs"
       task :show_vm_configs do
         all_data = ""
