@@ -22,7 +22,8 @@ Capistrano::Configuration.instance(:must_exist).load do
       end
 
       # default config expects this file in web root
-      task :create_check_file, :roles => :haproxy do
+      # check file should be created on webservers
+      task :create_check_file, :roles => :web do
         sudo "test -d /var/www && #{sudo} touch /var/www/check.txt"
       end
       
