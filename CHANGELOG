@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.003 (May 23, 2010)
+
+* simplified recipe loading
+
 = 2.1.6.002 (May 20, 2010)
 
 * add local license acceptance for java
