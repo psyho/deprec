@@ -214,6 +214,8 @@ Capistrano::Configuration.instance(:must_exist).load do
         deprec2.install_from_src(SRC_PACKAGES[:nagios_plugins], src_dir)        
       end
       
+      # allow the user to install custom plugins from RAILS_ROOT/config/nagios_plugins/plugins
+      # any file there is uploaded to /usr/local/nagios/libexec and chmodded to 755
       desc "Install user plugins for nagios from config/nagios_plugins/plugins in user's project"
       task :install_custom do
         remote_path = File.join('/', 'usr', 'local', 'nagios', 'libexec')
@@ -227,6 +229,9 @@ Capistrano::Configuration.instance(:must_exist).load do
         end
       end
 
+      # configure ssh + sudo for nagios:
+      # * allow certain commands so nagios can do checks (killall, kill, iptables, cat) as root
+      # * add nagios ssh key to authorized keys on servers to check (if the variable is set)
       desc "configure ssh + sudo access for nagios_user"
       task :config_access do
         deprec2.append_to_file_if_missing('/etc/sudoers', "#{nagios_user} ALL=(root) NOPASSWD:/usr/bin/killall")
