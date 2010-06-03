@@ -38,7 +38,7 @@ Capistrano::Configuration.instance(:must_exist).load do
     top.deprec.rails.symlink_shared_dirs
     top.deprec.rails.symlink_database_yml unless database_yml_in_scm
     top.deprec.rails.make_writable_by_app
-    top.deprec.passenger.set_owner_of_environment_rb if app_server_type.to_s == 'passenger'
+    top.deprec.passenger.set_owner_of_environment_rb if app_choice.to_s == 'passenger'
   end
 
   after :deploy, "deploy:cleanup"
@@ -104,8 +104,8 @@ Capistrano::Configuration.instance(:must_exist).load do
         top.deprec.rails.install
         top.deprec.svn.install
         top.deprec.git.install
-        top.deprec.web.install        # Uses value of web_server_type 
-        top.deprec.app.install        # Uses value of app_server_type
+        top.deprec.web.install        # Uses value of web_choice
+        top.deprec.app.install        # Uses value of app_choice
         top.deprec.monit.install if use_monit # FIXME: should be generic namespace monitoring, with :none option
         top.deprec.logrotate.install if use_logrotate # FIXME: should be generic namespace logrotation, with :none option
         
