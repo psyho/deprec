@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.006 (Jun 4, 2010)
+
+* again fixed variable names in rails recipe for being compatible with modify-alternatives-registration branch
+
 = 2.1.6.005 (Jun 3, 2010)
 
 * fixed variable names in rails recipe for being compatible with modify-alternatives-registration branch
