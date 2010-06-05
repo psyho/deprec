@@ -3,6 +3,7 @@ Capistrano::Configuration.instance(:must_exist).load do
   namespace :deprec do 
     namespace :iptables do
 
+      # see iptables-init script and iptables-default file for syntax
       set :iptables_allowed, "tcp:22,80,443"
       set :iptables_forwards, ""
       set :iptables_binary, "/sbin/iptables"
