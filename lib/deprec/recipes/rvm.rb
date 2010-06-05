@@ -19,9 +19,9 @@ EOF
       task :install_rubies do
         rvm_rubies.each_with_index do |ruby, i|
           run "rvm install #{ruby}"
-          run "rvm --default #{ruby}" if i == 0 && (rvm_default_ruby.empty? || rvm_default_ruby.nil?)
+          run "rvm --default #{ruby}" if i == 0 && (rvm_default_ruby.nil? || rvm_default_ruby.empty?)
         end
-        if !(rvm_default_ruby.empty? || rvm_default_ruby.nil?)
+        if !(rvm_default_ruby.nil? || rvm_default_ruby.empty?)
           set_default = rvm_default_ruby == "system" ? rvm_default_ruby : "--default #{rvm_default_ruby}"
           run "rvm #{set_default}"
         end
