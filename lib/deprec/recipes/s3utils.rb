@@ -4,7 +4,7 @@ Capistrano::Configuration.instance(:must_exist).load do
     namespace :s3utils do
       
       set :s3utils_bucket_location, 'EU'
-      set :s3utils_calling_format, 'SUBDOMAIN'
+      set :s3utils_calling_format, 'SUBDOMAIN' # used by s3sync in s3config.yml
       set :s3utils_access_key, "0123456789ABCDEFGHIJ"
       set :s3utils_secret_key, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcd"
       set :s3utils_passphrase, "my_passphrase"
@@ -19,7 +19,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         :install => 'cp -a S3 s3cmd /usr/local/bin/ ; cp s3cmd.1 /usr/local/share/man/man1/ ;'
       }
 
-      # setting it as a class variable makes it initialize too early, making 'user' contain the wrong value!
+      # XXX - setting it as a class variable makes it initialize too early, making 'user' contain the wrong value! - le1t0
       def s3utils_system_config_files
         [
           {:template => "s3cfg",
