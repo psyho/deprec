@@ -3,14 +3,30 @@ Capistrano::Configuration.instance(:must_exist).load do
   namespace :deprec do
     namespace :ssh do
       
-      # hash of :user => :ssh_key combinations
-      # :ssh_*_keys can be:
-      # - one key (a string)
-      # - an array of keys
+      # define SSH keys for each user
+      # :ssh_user_keys should be a hash, with:
+      # * the keys being any identifier for the user
+      # * the values being either:
+      # ** one SSH key in the form of a string
+      # ** multiple SSH keys in the form of an array of strings
+      # Define this variable in the main deploy.rb when using multistage capistrano
       set :ssh_user_keys, { }
+      # define SSH keys for each host
+      # :ssh_host_keys should be a hash, with:
+      # * the keys being any identifier for the host
+      # * the values being single strings: the SSH key of the host in question
+      # Define this variable in the main deploy.rb when using multistage capistrano
       set :ssh_host_keys, { }
-      # an array of symbols or strings containing user_names/host_names as defined in :ssh_*_keys
+      # :ssh_users should contain an array of user identifiers as defined in :ssh_user_keys,
+      # use this variable to define which users have access to the all the servers defined.
+      # Specify this variable in a stage deploy file when using multistage capistrano
+      # (so you can have different users have access to different servers)
       set :ssh_users, [ ]
+      # :ssh_hosts should contain an array of host identifiers as defined in :ssh_host_keys,
+      # use this variable to define which host keys should be added to the known_hosts file of the deploy user
+      # for all the servers defined.
+      # Specify this variable in a stage deploy file when using multistage capistrano
+      # (so you can have different known_hosts files on different servers)
       set :ssh_hosts, [ ]
 
       SYSTEM_CONFIG_FILES[:ssh] = [
@@ -43,6 +59,9 @@ Capistrano::Configuration.instance(:must_exist).load do
         restart
       end
 
+      # set access for SSH:
+      # * add keys of users to authorized_keys file of deploy_user
+      # * add host keys to known hosts file of deploy_user
       task :set_access do
         if ssh_users.size > 0
           run "rm -f ~/.ssh/authorized_keys.new"
