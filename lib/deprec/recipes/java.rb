@@ -1,12 +1,15 @@
 def accept_license
+  # don't ask to accept the license if already preset
   return if java_dlj_11_license_accepted
   in_license = false
+  # read license text from bottom of this file
   Capistrano::CLI.ui.say(IO.readlines(__FILE__).collect do |line|
     in_license = false if line =~ /^# END_LICENSE/
     current_line = in_license ? line.strip.gsub(/^#[ ]?/, '') : nil  
     in_license = true if line =~ /^# START_LICENSE/
     current_line
   end.compact.join("\n"))
+  # ask whether user accepts the license
   prompt = "Accept license (YES, [NO])?  "
   answer = Capistrano::CLI.ui.ask(prompt) do |q|
     q.overwrite = false
@@ -14,6 +17,7 @@ def accept_license
     q.validate = /(yes)|(no)|\n/i
     q.responses[:not_valid] = prompt
   end
+  # set variable to true if license is accepted
   if answer.upcase == 'YES'
     set :java_dlj_11_license_accepted, true
   end
@@ -25,13 +29,16 @@ Capistrano::Configuration.instance(:must_exist).load do
     namespace :java do
       
       set :java_include_jdk, false
+      # Set this variable to true in your deployment recipe to accept the license contained below
       set :java_dlj_11_license_accepted, false
       set :java_stopthread, true # no idea what this does, but it defaults to true on Hardy and should be preset for auto inst
       
       desc "Install Java"
       task :install do
         accept_license
+        # only install if license was accepted
         if java_dlj_11_license_accepted
+          # preseed questions for debconf, so automatic install works
           debconf_set_selections_file = "/tmp/java_debconf_set_selections.#{Time.now.strftime("%Y%m%d%H%M%S")}"
           debconf_set_selections = [
             "sun-java6-jre	sun-java6-jre/stopthread	boolean	#{java_stopthread}",
@@ -41,16 +48,21 @@ Capistrano::Configuration.instance(:must_exist).load do
             "sun-java6-bin	shared/present-sun-dlj-v1-1	note",
             "sun-java6-jre	shared/present-sun-dlj-v1-1	note"           
           ]
+          # select packages to install
           packages = %w(sun-java6-bin sun-java6-jre)
           if java_include_jdk
             packages << "sun-java6-jdk"
+            # add preseed answers if also installing jdk
             debconf_set_selections += [
               "sun-java6-jdk	shared/accepted-sun-dlj-v1-1	boolean	#{java_dlj_11_license_accepted}",
               "sun-java6-jdk	shared/present-sun-dlj-v1-1	note"
             ]
           end
+          # upload preseeded selections
           put debconf_set_selections.join("\n"), debconf_set_selections_file, :mode => 0644
+          # insert preseeded selections into debconf db
           sudo "debconf-set-selections #{debconf_set_selections_file} ; rm -f #{debconf_set_selections_file}"
+          # install java
           apt.install( {:base => packages}, :stable )
         end
       end
