@@ -36,8 +36,27 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       desc "Push god config files to server"
       task :config, :roles => :god do
+        config_system
+        config_project
+      end
+
+      task :config_system, :roles => :god do
         sudo "install -d /etc/god/conf.d"
         deprec2.push_configs(:god, SYSTEM_CONFIG_FILES[:god])
+      end
+      
+      # Push any files named *.god.#{rails_env} in directory config/god/ to servers with :god role,
+      # remove the .#{rails_env} extension and put them in #{deploy_to}/god/. Next, link them to /etc/god/conf.d/
+      task :config_project, :roles => :god do
+        Dir.new(File.join("config", "god")).entries.select { |e| e =~ /\.god\.#{rails_env}$/ }.each do |entry|
+          base_entry = File.basename(entry, ".#{rails_env}")
+          file = File.join("config", "god", entry)
+          full_remote_path = File.join(deploy_to, 'god', base_entry)
+          run "mkdir -p #{File.join(deploy_to, 'god')}"
+          std.su_put File.read(file), full_remote_path, '/tmp/', :mode=>0644
+          sudo "chown root:root #{full_remote_path}"
+          sudo "ln -nsf #{full_remote_path} /etc/god/conf.d/#{application}-#{base_entry}"
+        end
       end
 
       desc "Start God"
