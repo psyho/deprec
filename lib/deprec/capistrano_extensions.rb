@@ -198,7 +198,9 @@ module Deprec2
     END
   end
 
+  # allow string substitutions in files on the server
   def substitute_in_file(filename, old_value, new_value, sep_char='/')
+    # XXX sort out single quotes in 'value' - they'l break command!
     sudo <<-END
     sh -c "
     perl -p -i -e 's#{sep_char}#{old_value}#{sep_char}#{new_value}#{sep_char}' #{filename}
