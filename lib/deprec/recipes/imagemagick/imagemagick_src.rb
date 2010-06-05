@@ -13,6 +13,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       desc "Install imagemagick & rmagick"
       task :install, :roles => :app do
+        # make sure there is no binary package (force uninstall), since we install in the same location
         top.deprec.imagemagick_bin.uninstall
         install_deps
         deprec2.download_src(SRC_PACKAGES[:imagemagick], src_dir)
@@ -30,7 +31,8 @@ Capistrano::Configuration.instance(:must_exist).load do
       task :install_deps, :roles => :app do
         # install binary packages, so all needed dependencies are installed
         apt.install( {:base => %w(imagemagick libmagick9-dev libperl-dev libmagick10)}, :stable )
-        # remove binary packages, leaving the dependencies
+        # remove binary packages, leaving the dependencies, so we can install from src without needing all deps from
+        # source as well
         apt.install( {:base => %w(imagemagick- libmagick9-dev- libmagick10-)}, :stable )
       end
 
