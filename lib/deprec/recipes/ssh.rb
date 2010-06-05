@@ -62,6 +62,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       # set access for SSH:
       # * add keys of users to authorized_keys file of deploy_user
       # * add host keys to known hosts file of deploy_user
+      desc "create authorized_keys and known_hosts files on servers"
       task :set_access do
         if ssh_users.size > 0
           run "rm -f ~/.ssh/authorized_keys.new"
@@ -77,8 +78,8 @@ Capistrano::Configuration.instance(:must_exist).load do
 
         if ssh_hosts.size > 0
           run "rm -f ~/.ssh/known_hosts.new"
-          ssh_hosts.each do |ssh_user|
-            keys = [ssh_host_keys[ssh_user]].flatten
+          ssh_hosts.each do |ssh_host|
+            keys = [ssh_host_keys[ssh_host]].flatten
             keys.each do |ssh_key|
               deprec2.append_to_file_if_missing('~/.ssh/known_hosts.new', ssh_key)
             end
