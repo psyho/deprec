@@ -56,7 +56,7 @@ Capistrano::Configuration.instance(:must_exist).load do
           std.su_put File.read(file), full_remote_path, '/tmp/', :mode=>0644
           sudo "chown root:root #{full_remote_path}"
           sudo "ln -nsf #{full_remote_path} /etc/god/conf.d/#{application}-#{base_entry}"
-        end
+        end if File.directory?(File.join("config", "god"))
       end
 
       desc "Start God"
