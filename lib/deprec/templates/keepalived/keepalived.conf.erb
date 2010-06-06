@@ -1,18 +1,38 @@
-vrrp_script chk_haproxy {           # Requires keepalived-1.1.13
-        script "<%= keepalived_script %>"     # cheaper than pidof
-        interval <%= keepalived_interval %>                      # check every 2 seconds
-        weight <%= keepalived_weight %>                        # add 2 points of prio if OK
+# touch /etc/keepalived/MASTER to make a BACKUP keepalived be MASTER. Remove it to make it BACKUP again.
+vrrp_script chk_wanted_state {
+        script "test -e /etc/keepalived/MASTER"
+        interval 1
+        weight 2
 }
 
-vrrp_instance VI_1 {
-        interface <%= keepalived_interface %>
-        state <%= keepalived_state %>
-        virtual_router_id <%= keepalived_virtual_router_id %>
-        priority <%= keepalived_priority %>
-        virtual_ipaddress {
-            <%= keepalived_virtual_ipaddress %>
-        }
-        track_script {
-            chk_haproxy
-        }
+<% keepalived_scripts.each do |name, settings| %>
+vrrp_script chk_<%= name.to_s %> {
+        script "<%= settings[:script] %>"
+        interval <%= settings[:interval] %>
+        weight <%= settings[:weight] %>
 }
+<% end %>
+
+<% instance_counter = 1 %>
+<% keepalived_instances.each do |virtual_ipaddress, settings| %>
+vrrp_instance VI_<%= instance_counter %> {
+        interface <%= settings[:interface] %>
+        state <%= settings[:state] %>
+        virtual_router_id <%= settings[:virtual_router_id] %>
+        priority <%= settings[:priority] %>
+        virtual_ipaddress {
+            <%= virtual_ipaddress %>
+        }
+<% if settings[:state] != 'MASTER' %>
+	    track_script {
+	        chk_wanted_state
+	    }
+<% end %>
+<% (settings[:scripts].nil? || [settings[:scripts]].flatten.empty? ? keepalived_scripts.keys : [settings[:scripts]].flatten).each do |name| %>
+        track_script {
+            chk_<%= name.to_s %>
+        }
+<% end %>
+}
+<% instance_counter += 1 %>
+<% end %>

@@ -2,15 +2,37 @@
 Capistrano::Configuration.instance(:must_exist).load do 
   namespace :deprec do
     namespace :keepalived do
-        
-      set :keepalived_script, 'killall -0 haproxy'
-      set :keepalived_virtual_ipaddress, '192.168.0.99'
-      set :keepalived_virtual_router_id, '51'
-      set :keepalived_interface, 'eth0'
-      set :keepalived_interval, '2'  # check every 2 seconds
-      set :keepalived_weight, '2'  # add 2 points of prio if OK
-      set :keepalived_priority, '101' # 101 on master, 100 on backup
-      set :keepalived_state, 'MASTER'
+
+      # :keepalived_scripts should contain a hash where each key is the suffix of the vrrp_script registration,
+      # and the value is again a hash, containing as key => value pairs:
+      # :script => 'killall -0 haproxy' or any script which returns a 0 or 1 exit value
+      # :interval => 1
+      # :weight => 2
+      set :keepalived_scripts, {
+        :haproxy => {
+          :script => 'killall -0 haproxy',
+          :interval => 1,
+          :weight => 2
+        }
+      }
+
+      # :keepalived_instances should contain a hash with at least one key => value pair. The key should be a string
+      # with the virtual IP address. The value is again a hash with some settings, containing as key => value pairs:
+      # :virtual_router_id => '51' or any unique integer among all VRRP instances on the same subnet
+      # :interface => 'eth0'
+      # :priority => '101', usually should be one higher for MASTER than for BACKUP
+      # :state => 'MASTER' or 'BACKUP', automatically adds :wanted_state to :scripts below
+      # :scripts => symbol or hash of scripts to execute for this instance, when left undefined all scripts defined above
+      # are added
+      set :keepalived_instances, {
+        "192.168.0.99" => {
+          :virtual_router_id => '51',
+          :interface => 'eth0',
+          :priority => '101',
+          :state => 'MASTER',
+          :scripts => :haproxy
+        }
+      }
   
       desc "Install keepalived on server"
       task :install, :roles => :failover do
