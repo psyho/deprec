@@ -221,4 +221,24 @@ Capistrano::Configuration.instance(:must_exist).load do
       "#{executing_recipe}_#{executing_task}"
     end
   end
+
+  profile :rails_stack, :install do |p, r|
+    r.ruby
+    r.rails
+    r.svn
+    r.git
+    r.web
+    r.app
+    r.monit if use_monit
+    r.logrotate if use_logrotate
+  end
+  
+  profile :single_server do |p,r|
+    p.rails_stack
+    r.iptables
+    r.postfix
+    r.ntp
+    r.mysql
+  end
+  
 end
