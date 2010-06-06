@@ -12,6 +12,8 @@ Capistrano::Configuration.instance(:must_exist).load do
       set :nagios_htpasswd_file, '/usr/local/nagios/etc/htpasswd.users'
       # default :application, 'nagios' 
       set :nagios_ssh_key, nil
+      # all SSH hostnames or IPs that nagios should check
+      set :nagios_known_hosts, [ ]
       
       SRC_PACKAGES[:nagios] = {
         :url => "http://prdownloads.sourceforge.net/sourceforge/nagios/nagios-3.2.0.tar.gz",
@@ -52,7 +54,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       task :create_nagios_user, :roles => :nagios do
         deprec2.groupadd(nagios_group)
-        deprec2.useradd(nagios_user, :group => nagios_group, :homedir => false)
+        deprec2.useradd(nagios_user, :group => nagios_group)
         # deprec2.add_user_to_group(nagios_user, apache_user)
         deprec2.groupadd(nagios_cmd_group)
         deprec2.add_user_to_group(nagios_user, nagios_cmd_group)
@@ -145,6 +147,10 @@ Capistrano::Configuration.instance(:must_exist).load do
         deprec2.push_configs(:nagios, SYSTEM_CONFIG_FILES[:nagios])
         config_check
         restart
+        if nagios_known_hosts.size > 0
+          put nagios_known_hosts.join("\n"), tmp_file = "/tmp/ssh_keyscan_#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", :mode => 0644
+          run "ssh-keyscan -f #{tmp_file} -t rsa > ~nagios/.ssh/known_hosts ; rm -f #{tmp_file} ; chown #{nagios_user}:#{nagios_group} ~nagios/.ssh/known_hosts"
+        end
       end
       
       desc "Run Nagios config check"
