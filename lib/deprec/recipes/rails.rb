@@ -87,7 +87,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       # install some required ruby gems
       task :install_gems do
-        gem2.install 'sqlite3-ruby'
+        gem2.install 'sqlite3-ruby', '1.2.5' # 1.3.0 fails to build on Ubuntu Hardy - le1t0
         gem2.install 'mysql'
         gem2.install 'ruby-pg'
         gem2.install 'rails'
