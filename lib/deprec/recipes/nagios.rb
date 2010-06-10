@@ -12,6 +12,10 @@ Capistrano::Configuration.instance(:must_exist).load do
       set :nagios_htpasswd_file, '/usr/local/nagios/etc/htpasswd.users'
       # default :application, 'nagios' 
       set :nagios_ssh_key, nil
+      # all SSH hostnames or IPs that nagios should check
+      set :nagios_known_hosts, [ ]
+      # allow nagios user on check_hosts to do certain commands through sudo
+      set :nagios_sudo_commands, [ ] # i.e.: %w(/usr/bin/killall /bin/kill /sbin/iptables /bin/cat)
       
       SRC_PACKAGES[:nagios] = {
         :url => "http://prdownloads.sourceforge.net/sourceforge/nagios/nagios-3.2.0.tar.gz",
@@ -52,7 +56,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       task :create_nagios_user, :roles => :nagios do
         deprec2.groupadd(nagios_group)
-        deprec2.useradd(nagios_user, :group => nagios_group, :homedir => false)
+        deprec2.useradd(nagios_user, :group => nagios_group)
         # deprec2.add_user_to_group(nagios_user, apache_user)
         deprec2.groupadd(nagios_cmd_group)
         deprec2.add_user_to_group(nagios_user, nagios_cmd_group)
@@ -145,6 +149,10 @@ Capistrano::Configuration.instance(:must_exist).load do
         deprec2.push_configs(:nagios, SYSTEM_CONFIG_FILES[:nagios])
         config_check
         restart
+        if nagios_known_hosts.size > 0
+          put nagios_known_hosts.join("\n"), tmp_file = "/tmp/ssh_keyscan_#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", :mode => 0644
+          run "ssh-keyscan -f #{tmp_file} -t rsa > ~nagios/.ssh/known_hosts ; rm -f #{tmp_file} ; chown #{nagios_user}:#{nagios_group} ~nagios/.ssh/known_hosts"
+        end
       end
       
       desc "Run Nagios config check"
@@ -212,35 +220,45 @@ Capistrano::Configuration.instance(:must_exist).load do
         create_nagios_user
         deprec2.download_src(SRC_PACKAGES[:nagios_plugins], src_dir)
         deprec2.install_from_src(SRC_PACKAGES[:nagios_plugins], src_dir)        
+        config_access
+        install_custom
       end
       
+      # allow the user to install custom plugins from RAILS_ROOT/config/nagios_plugins/plugins
+      # any file there is uploaded to /usr/local/nagios/libexec and chmodded to 755
       desc "Install user plugins for nagios from config/nagios_plugins/plugins in user's project"
       task :install_custom do
-        remote_path = File.join('/', 'usr', 'local', 'nagios', 'libexec')
         plugins_path = File.join('config', 'nagios_plugins', 'plugins')
-        Dir.new(plugins_path).entries.each do |entry|
-          remote_plugin = File.join(remote_path, entry)
-          plugin = File.join(plugins_path, entry)
-          if File.file?(plugin)
-            std.su_put File.read(plugin), remote_plugin, '/tmp', :mode => 0755
+        if File.directory?(plugins_path)
+          remote_path = File.join('/', 'usr', 'local', 'nagios', 'libexec')
+          Dir.new(plugins_path).entries.each do |entry|
+            remote_plugin = File.join(remote_path, entry)
+            plugin = File.join(plugins_path, entry)
+            if File.file?(plugin)
+              std.su_put File.read(plugin), remote_plugin, '/tmp', :mode => 0755
+            end
           end
         end
       end
 
+      # configure ssh + sudo for nagios:
+      # * allow certain commands so nagios can do checks (killall, kill, iptables, cat) as root
+      # * add nagios ssh key to authorized keys on servers to check (if the variable is set)
       desc "configure ssh + sudo access for nagios_user"
       task :config_access do
-        deprec2.append_to_file_if_missing('/etc/sudoers', "#{nagios_user} ALL=(root) NOPASSWD:/usr/bin/killall")
-        deprec2.append_to_file_if_missing('/etc/sudoers', "#{nagios_user} ALL=(root) NOPASSWD:/bin/kill")
-        deprec2.append_to_file_if_missing('/etc/sudoers', "#{nagios_user} ALL=(root) NOPASSWD:/sbin/iptables")
-        deprec2.append_to_file_if_missing('/etc/sudoers', "#{nagios_user} ALL=(root) NOPASSWD:/bin/cat")
-        sudo "mkdir -p /home/#{nagios_user}/.ssh"
-        sudo "chmod 700 /home/#{nagios_user}/.ssh"
-        if nagios_ssh_key
-          sudo "echo '#{nagios_ssh_key}' >> /tmp/authorized_keys_file_for_nagios_user.tmp"
+        nagios_sudo_commands.each do |command|
+          deprec2.append_to_file_if_missing('/etc/sudoers', "#{nagios_user} ALL=(root) NOPASSWD:#{command}")
         end
-        sudo "mv /tmp/authorized_keys_file_for_nagios_user.tmp /home/#{nagios_user}/.ssh/authorized_keys"
-        sudo "chmod 600 /home/#{nagios_user}/.ssh/authorized_keys"
-        sudo "chown -R nagios:nagios /home/#{nagios_user}/.ssh"
+        unless nagios_ssh_key.nil?
+          sudo "mkdir -p /home/#{nagios_user}/.ssh"
+          sudo "chmod 700 /home/#{nagios_user}/.ssh"
+          if nagios_ssh_key
+            sudo "echo '#{nagios_ssh_key}' >> /tmp/authorized_keys_file_for_nagios_user.tmp"
+          end
+          sudo "mv /tmp/authorized_keys_file_for_nagios_user.tmp /home/#{nagios_user}/.ssh/authorized_keys"
+          sudo "chmod 600 /home/#{nagios_user}/.ssh/authorized_keys"
+          sudo "chown -R nagios:nagios /home/#{nagios_user}/.ssh"
+        end
       end
 
       # Install dependencies for nagios plugins
