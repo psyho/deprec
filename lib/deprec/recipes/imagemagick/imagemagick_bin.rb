@@ -7,8 +7,10 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       desc "Install imagemagick & rmagick"
       task :install, :roles => :app do
-        uninstall # make sure package is uninstalled (if there is any), before attempting source uninstall, since source
-                  # uninstall would also remove binary package files
+        # make sure binary package is uninstalled (if there is any), before attempting source uninstall, since source
+        # uninstall would also remove binary package files
+        uninstall
+        # uninstall source (forced, might not be there) so we are sure no old files are left behind
         top.deprec.imagemagick_src.uninstall
         apt.install( {:base => %w(imagemagick libmagick9-dev libmagick10)}, :stable )
         gem2.install 'rmagick' if imagemagick_include_rmagick
