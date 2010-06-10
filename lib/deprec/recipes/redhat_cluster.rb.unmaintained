@@ -3,6 +3,7 @@ Capistrano::Configuration.instance(:must_exist).load do
   namespace :deprec do
     namespace :redhat_cluster do
   
+	  # check redhat cluster's cluster.conf manpage for explanation of configuring this
       set :redhat_cluster_name, 'storagecluster'
       set :redhat_cluster_config_version, '1'
       set :redhat_cluster_nodes, [
@@ -114,11 +115,14 @@ Capistrano::Configuration.instance(:must_exist).load do
       end
   
       task :config_common, :roles => [:storage_client, :storage_server] do
+		# add some modules to load
         deprec2.append_to_file_if_missing('/etc/modules', 'dm-mod')
         deprec2.append_to_file_if_missing('/etc/modules', 'gfs')
         deprec2.append_to_file_if_missing('/etc/modules', 'lock_dlm')
-        deprec2.append_to_file_if_missing('/etc/modules', 'gnbd')    
+        deprec2.append_to_file_if_missing('/etc/modules', 'gnbd')
+		# comment out default setting of locking_type
         deprec2.substitute_in_file('/etc/lvm/lvm.conf', '^(\s*)(locking_type = 1\s*)$', '$1#$2')
+        # uncomment these settings in config file
         deprec2.substitute_in_file('/etc/lvm/lvm.conf', '^(\s*)#\s*(locking_library = \"liblvm2clusterlock.so\"\s*)$', '$1$2')
         deprec2.substitute_in_file('/etc/lvm/lvm.conf', '^(\s*)#\s*(locking_type = 2\s*)$', '$1$2')
         deprec2.substitute_in_file('/etc/lvm/lvm.conf', '^(\s*)#\s*(library_dir = \"/lib/lvm2\"\s*)$', '$1$2', '%')
