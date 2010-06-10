@@ -1,5 +1,23 @@
 # deprec changelog
 
+= 2.1.6.007 (Jun 10, 2010)
+
+* some adjustments to nagios recipe
+* support setting known_hosts for monitoring user in nagios recipe
+* added easy setting of known_hosts for deploy_user in ssh recipe
+* added default profiles
+* rewrote keepalived recipe, added possibility of manually switching master + added configurability of scripts and instances
+* small bugfix for loading god configs
+* added comments for profile recipe
+* commented redhat-cluster recipe
+* small bugfix for rvm recipe
+* commented s3utils recipe
+* commented java recipe
+* added comments to iptables recipe
+* added comments to imagemagick recipe
+* added config_project + comments to god recipe
+* added comments + some small modifications + small bugfix to ssh recipe
+
 = 2.1.6.006 (Jun 4, 2010)
 
 * again fixed variable names in rails recipe for being compatible with modify-alternatives-registration branch
