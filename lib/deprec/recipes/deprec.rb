@@ -27,6 +27,8 @@ Capistrano::Configuration.instance(:must_exist).load do
   
   # Service defaults
   #
+  # load all directories under lib/deprec/recipes, and set :none to the default selection for the respective
+  # recipe collection type (i.e. db, app, web, etc)
   Dir.glob("#{File.dirname(__FILE__)}/*").each do |entry|
     default "#{File.basename(entry)}_choice".to_sym, :none if File.directory?(entry)
   end  
@@ -81,7 +83,10 @@ Capistrano::Configuration.instance(:must_exist).load do
       # link application specific recipes into canonical task names
       # e.g. deprec:web:restart => deprec:nginx:restart 
       
-      
+      # load all directories under lib/deprec/recipes, create a two element array for each, setting the first value
+      # to the directory name (as a symbol; the canonicalized namespace), the second to the variable which sets the
+      # selection for this recipe collection type. These arrays are collected, empty entries removed and then
+      # everything is flattened to a single array, leaving alternating key-values for conversion to a hash.
       namespaces_to_connect = Hash[*(Dir.glob("#{File.dirname(__FILE__)}/*").collect do |entry|
         [ File.basename(entry).to_sym, "#{File.basename(entry)}_choice".to_sym ] if File.directory?(entry)
       end.compact.flatten)]
