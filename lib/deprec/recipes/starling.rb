@@ -25,7 +25,7 @@ Capistrano::Configuration.instance(:must_exist).load do
 
         create_starling_user_and_group
         set_perms_for_starling_dirs
-        symlink_starling_for_rubyee if ruby_vm_type == :ree
+        symlink_starling_for_rubyee if ruby_choice == :ree
 
         SYSTEM_CONFIG_FILES[:starling].each do |file|
           deprec2.render_template(:starling, file.merge(:remote=>true))

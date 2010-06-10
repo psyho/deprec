@@ -4,7 +4,7 @@ Capistrano::Configuration.instance(:must_exist).load do
     namespace :passenger do
           
       set(:passenger_install_dir) {
-        if ruby_vm_type == :ree
+        if ruby_choice == :ree
           base_dir = "#{ree_install_dir}/lib/ruby/gems/1.8/gems/"
           latest_passenger_version = capture("ls -d #{base_dir + 'passenger-*'} | tail -1").chomp
         else
@@ -39,7 +39,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         install_deps
         deprec2.download_src(SRC_PACKAGES[:passenger], src_dir)
 
-        if ruby_vm_type.to_s == 'ree'
+        if ruby_choice.to_s == 'ree'
           # Install the Passenger that came with Ruby Enterprise Edition
           run "yes | #{sudo} env PATH=#{ree_install_dir}/bin:$PATH #{ree_install_dir}/bin/passenger-install-apache2-module"
         else
