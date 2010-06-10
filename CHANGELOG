@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.008 (Jun 10, 2010)
+
+* Fixed use of some variable names in various recipes relating to alternatives registration
+
 = 2.1.6.007 (Jun 10, 2010)
 
 * some adjustments to nagios recipe
