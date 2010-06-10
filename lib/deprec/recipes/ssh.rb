@@ -3,15 +3,23 @@ Capistrano::Configuration.instance(:must_exist).load do
   namespace :deprec do
     namespace :ssh do
       
-      # hash of :user => :ssh_key combinations
-      # :ssh_*_keys can be:
-      # - one key (a string)
-      # - an array of keys
+      # define SSH keys for each user
+      # :ssh_user_keys should be a hash, with:
+      # * the keys being any identifier for the user
+      # * the values being either:
+      # ** one SSH key in the form of a string
+      # ** multiple SSH keys in the form of an array of strings
+      # Define this variable in the main deploy.rb when using multistage capistrano
       set :ssh_user_keys, { }
-      set :ssh_host_keys, { }
-      # an array of symbols or strings containing user_names/host_names as defined in :ssh_*_keys
+      # :ssh_users should contain an array of user identifiers as defined in :ssh_user_keys,
+      # use this variable to define which users have access to the all the servers defined.
+      # Specify this variable in a stage deploy file when using multistage capistrano
+      # (so you can have different users have access to different servers)
       set :ssh_users, [ ]
-      set :ssh_hosts, [ ]
+      # :ssh_known_hosts variable should contain the hostnames or IP addresses (as an array of strings)
+      # of all hosts that should be put in the deploy_user's known_hosts file. This known_hosts file will
+      # be put on all defined servers.
+      set :ssh_known_hosts, [ ]
 
       SYSTEM_CONFIG_FILES[:ssh] = [
         
@@ -43,6 +51,10 @@ Capistrano::Configuration.instance(:must_exist).load do
         restart
       end
 
+      # set access for SSH:
+      # * add keys of users to authorized_keys file of deploy_user
+      # * add host keys to known hosts file of deploy_user
+      desc "create authorized_keys and known_hosts files on servers"
       task :set_access do
         if ssh_users.size > 0
           run "rm -f ~/.ssh/authorized_keys.new"
@@ -56,16 +68,9 @@ Capistrano::Configuration.instance(:must_exist).load do
           run "mv ~/.ssh/authorized_keys.new ~/.ssh/authorized_keys"
         end
 
-        if ssh_hosts.size > 0
-          run "rm -f ~/.ssh/known_hosts.new"
-          ssh_hosts.each do |ssh_user|
-            keys = [ssh_host_keys[ssh_user]].flatten
-            keys.each do |ssh_key|
-              deprec2.append_to_file_if_missing('~/.ssh/known_hosts.new', ssh_key)
-            end
-          end
-          run "cp ~/.ssh/known_hosts ~/.ssh/known_hosts.bak"
-          run "mv ~/.ssh/known_hosts.new ~/.ssh/known_hosts"
+        if ssh_known_hosts.size > 0
+          put ssh_known_hosts.join("\n"), tmp_file = "/tmp/ssh_keyscan_#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", :mode => 0644
+          run "ssh-keyscan -f #{tmp_file} -t rsa > ~/.ssh/known_hosts ; rm -f #{tmp_file}"
         end
       end
       
