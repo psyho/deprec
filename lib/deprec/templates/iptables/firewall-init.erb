@@ -47,7 +47,9 @@ function define_forwards () {
     srcport="$(echo $forward | cut -d '>' -f 1 | cut -d ':' -f 2)"
     destip="$(echo $forward | cut -d ';' -f 1 | cut -d '>' -f '2' | cut -d ':' -f 1)"
     destport="$(echo $forward | cut -d ';' -f 1 | cut -d '>' -f '2' | cut -d ':' -f 2)"
+	# define forward in the nat chain, redirect to the destination IP and port
     $IPTABLES -t nat -A PREROUTING -p $proto -d $localip --dport $srcport -j DNAT --to $destip:$destport
+	# allow access to the destination IP and port in the FORWARD chain
 	$IPTABLES -A FORWARD -p $proto -d $destip --dport $destport -j ACCEPT
   } ; done
 }
@@ -71,7 +73,9 @@ function set_default_rules () {
 
 # don't call parse_sources directly! It's called by set_allowed_rules
 function parse_sources () {
+	# parse all sources
 	for sourcedef in $1 ; do {
+		# define targets for each source
 		parse_targets "$2" "-s ${sourcedef}"
 	} ; done
 }
@@ -79,13 +83,18 @@ function parse_sources () {
 # don't call parse_targets directly! It's called by set_allowed_rules
 function parse_targets () {
 	sourcedef="$2"
+	# parse all targets
 	for targetdef in $1 ; do {
+		# targets should be define as:
+		# protocol[,protocol[,...]][:port[,port[,...]]]
 		protocols="$(echo $targetdef | awk -F ":" '{ print $1; }' | sed 's/,/ /g')"
 		ports="$(echo $targetdef | awk -F ":" '{ print $2; }' | sed 's/,/ /g')"
 		for protocol in ${protocols} ; do {
+			# if no ports are defined, just allow access to the entire protocol (i.e. pptp, vrrp, etc)
 			if [ -z "${ports}" ] ; then
 				$IPTABLES -A INPUT -p ${protocol} ${sourcedef} -m state --state NEW -j ACCEPT ;
 			else
+				# for each defined port, allow access to the defined source or the world (if empty)
 				for port in ${ports} ; do {
 					OPT="--dport"
 					[ "$protocol" = "icmp" ] && OPT="--icmp-type"
@@ -97,12 +106,18 @@ function parse_targets () {
 }
 
 function set_allowed_rules () {
+	# all rules should be defined in one space separated variable called allowed
 	for ruledef in ${allowed} ; do {
+		# everything before the @ sign defines the target specification (i.e. IP + port or protocol to allow access to)
+		# targets should be semi colon (;) separated (which are changed to spaces for easy parsing)
 		target="$(echo $ruledef | awk -F "@" '{ print $1; }' | sed 's/;/ /g')"
+		# everything after the @ sign defines the source specification (i.e. IP, etc from where the request is coming)
+		# sources should be comma (,) separated (which are changed to spaces for easy parsing)
 		source="$(echo $ruledef | awk -F "@" '{ print $2; }' | sed 's/,/ /g')"
+		# if there is no source specification (allow entire world), then only define the target
 		if [ -z "${source}" ] ; then
 			parse_targets "$target"
-		else
+		else # else define the source first
 			parse_sources "$source" "$target"
 		fi
 	} ; done	
