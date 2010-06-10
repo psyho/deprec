@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.009 (Jun 10, 2010)
+
+* removed default profiles since they cause problems when using capistrano variables from recipes
+
 = 2.1.6.008 (Jun 10, 2010)
 
 * Fixed use of some variable names in various recipes relating to alternatives registration
