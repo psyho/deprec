@@ -104,7 +104,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       task :config_project, :roles => :app do
         deprec2.push_configs(:mongrel, PROJECT_CONFIG_FILES[:mongrel])
         symlink_mongrel_cluster
-        send("symlink_#{web_server_type}_vhost")
+        send("symlink_#{web_choice}_vhost")
         symlink_monit_config
         symlink_logrotate_config
         activate_project
@@ -171,7 +171,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       task :activate_project, :roles => :app do
         symlink_mongrel_cluster
         symlink_monit_config
-        if web_server_type.to_s == 'apache'
+        if web_choice.to_s == 'apache'
           sudo "a2ensite #{application}" 
         end
       end

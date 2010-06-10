@@ -4,8 +4,7 @@ Capistrano::Configuration.instance(:must_exist).load do
     namespace :passenger do
           
       set(:passenger_install_dir) {
-        
-        if ruby_vm_type == :ree
+        if ruby_choice == :ree
           base_dir = "#{ree_install_dir}/lib/ruby/gems/1.8/gems/"
           latest_passenger_version = capture("ls -d #{base_dir + 'passenger-*'} | tail -1").chomp
         else
