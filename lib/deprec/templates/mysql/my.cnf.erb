@@ -56,7 +56,7 @@
 <% if mysql_mysqld_innodb_additional_mem_pool_size %>innodb_additional_mem_pool_size = <%= mysql_mysqld_innodb_additional_mem_pool_size %><% end %>
 <% if mysql_mysqld_innodb_flush_method %>innodb_flush_method = <%= mysql_mysqld_innodb_flush_method %><% end %>
 <% if mysql_mysqld_thread_concurrency %>thread_concurrency = <%= mysql_mysqld_thread_concurrency %><% end %>
-<% if mysql_mysqld_innodb_thread_concurrency %>thread_innodb_concurrency = <%= mysql_mysqld_innodb_thread_concurrency %><% end %>
+<% if mysql_mysqld_innodb_thread_concurrency %>innodb_thread_concurrency = <%= mysql_mysqld_innodb_thread_concurrency %><% end %>
 <% if mysql_mysqld_max_connections %>max_connections = <%= mysql_mysqld_max_connections %><% end %>
 <% if mysql_mysqld_read_buffer_size %>read_buffer_size = <%= mysql_mysqld_read_buffer_size %><% end %>
 <% if mysql_mysqld_read_rnd_buffer_size %>read_rnd_buffer_size = <%= mysql_mysqld_read_rnd_buffer_size %><% end %>
