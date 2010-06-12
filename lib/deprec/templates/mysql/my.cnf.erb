@@ -3,6 +3,7 @@
 <% if mysql_client_socket %>socket = <%= mysql_client_socket %><% end %>
 
 [mysql]
+<% if mysql_mysql_default_character_set %>default-character-set = <%= mysql_mysql_default_character_set %><% end %>
 <% if mysql_mysql_no_auto_rehash %>no-auto-rehash<% end %>
 
 [mysqld_safe]
@@ -45,10 +46,6 @@
 <% if mysql_mysqld_default_character_set %>default-character-set = <%= mysql_mysqld_default_character_set %><% end %>
 <% if mysql_mysqld_character_set_server %>character-set-server = <%= mysql_mysqld_character_set_server %><% end %>
 <% if mysql_mysqld_collation_server %>collation-server = <%= mysql_mysqld_collation_server %><% end %>
-<% if mysql_mysqld_character_set_client %>character-set-client = <%= mysql_mysqld_character_set_client %><% end %>
-<% if mysql_mysqld_character_set_connection %>character-set-connection = <%= mysql_mysqld_character_set_connection %><% end %>
-<% if mysql_mysqld_character_set_results %>character-set-results = <%= mysql_mysqld_character_set_results %><% end %>
-<% if mysql_mysqld_collation_connection %>collation-connection = <%= mysql_mysqld_collation_connection %><% end %>
 <% if mysql_mysqld_group_concat_max_len %>group_concat_max_len = <%= mysql_mysqld_group_concat_max_len %><% end %>
 <% if mysql_mysqld_innodb_file_per_table %>innodb_file_per_table<% end %>
 
