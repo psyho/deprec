@@ -2,6 +2,10 @@
 
 = 2.1.6.012 (Jun 12, 2010)
 
+* added character set options in mysql recipe
+
+= 2.1.6.012 (Jun 12, 2010)
+
 * two small fixes in mysql recipe
 
 = 2.1.6.011 (Jun 12, 2010)
