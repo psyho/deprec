@@ -62,7 +62,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       set :mysql_mysqld_innodb_log_buffer_size, nil
       set :mysql_mysqld_innodb_additional_mem_pool_size, nil
       set :mysql_mysqld_innodb_flush_method, nil
-      set :mysql_mysqld_thread_concurrency, 10
+      set :mysql_mysqld_thread_concurrency, nil
       set :mysql_mysqld_max_connections, nil
       set :mysql_mysqld_read_buffer_size, nil
       set :mysql_mysqld_read_rnd_buffer_size, nil
