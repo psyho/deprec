@@ -50,6 +50,10 @@ Capistrano::Configuration.instance(:must_exist).load do
       set :mysql_mysqld_default_character_set, nil
       set :mysql_mysqld_character_set_server, nil
       set :mysql_mysqld_collation_server, nil
+      set :mysql_mysqld_character_set_client, nil
+      set :mysql_mysqld_character_set_connection, nil
+      set :mysql_mysqld_character_set_results, nil
+      set :mysql_mysqld_collation_connection, nil
       set :mysql_mysqld_group_concat_max_len, nil
       set :mysql_mysqld_innodb_file_per_table, false
 
