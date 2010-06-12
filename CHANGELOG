@@ -1,6 +1,10 @@
 # deprec changelog
 
-= 2.1.6.012 (Jun 12, 2010)
+= 2.1.6.014 (Jun 12, 2010)
+
+* fixed setting client character set in mysql recipe
+
+= 2.1.6.013 (Jun 12, 2010)
 
 * added character set options in mysql recipe
 
