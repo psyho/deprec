@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.015 (Jun 29, 2010)
+
+* made capistrano dependency more strict
+
 = 2.1.6.014 (Jun 12, 2010)
 
 * fixed setting client character set in mysql recipe
