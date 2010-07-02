@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.019 (Jul 2, 2010)
+
+* small fix, since cp/chmod was still non root, for nagios recipe
+
 = 2.1.6.018 (Jul 2, 2010)
 
 * fix for writing known hosts for nagios
