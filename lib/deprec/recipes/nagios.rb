@@ -152,7 +152,11 @@ Capistrano::Configuration.instance(:must_exist).load do
         if nagios_known_hosts.size > 0
           put nagios_known_hosts.join("\n"), tmp_file = "/tmp/ssh_keyscan_#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", :mode => 0644
           tmp_out_file = "/tmp/known_hosts_#{Time.now.strftime("%Y%m%d%H%M%S")}.txt"
-          sudo "ssh-keyscan -f #{tmp_file} -t rsa > #{tmp_out_file} ; rm -f #{tmp_file} ; cp #{tmp_out_file} ~nagios/.ssh/known_hosts ; rm -f #{tmp_out_file} ; chown #{nagios_user}:#{nagios_group} ~nagios/.ssh/known_hosts"
+          run "ssh-keyscan -f #{tmp_file} -t rsa > #{tmp_out_file}"
+          run "rm -f #{tmp_file}"
+          sudo "cp #{tmp_out_file} ~nagios/.ssh/known_hosts"
+          run "rm -f #{tmp_out_file}"
+          sudo "chown #{nagios_user}:#{nagios_group} ~nagios/.ssh/known_hosts"
         end
       end
       
