@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.018 (Jul 2, 2010)
+
+* fix for writing known hosts for nagios
+
 = 2.1.6.017 (Jul 1, 2010)
 
 * upgraded capistrano to 2.5.18.008
