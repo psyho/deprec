@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.021 (Jul 5, 2010)
+
+* fixed writing known hosts file
+
 = 2.1.6.020 (Jul 2, 2010)
 
 * actually merged in new code
