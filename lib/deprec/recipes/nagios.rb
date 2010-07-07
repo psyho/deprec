@@ -149,8 +149,10 @@ Capistrano::Configuration.instance(:must_exist).load do
         deprec2.push_configs(:nagios, SYSTEM_CONFIG_FILES[:nagios])
         config_check
         restart
+        require 'socket'
         if nagios_known_hosts.size > 0
-          put (nagios_known_hosts << "").join("\n"), tmp_file = "/tmp/ssh_keyscan_#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", :mode => 0644
+          hosts_and_ips = (nagios_known_hosts + nagios_known_hosts.collect { |h| Socket.getaddrinfo(h, 0, Socket::AF_INET, Socket::SOCK_STREAM, Socket::IPPROTO_TCP, Socket::INADDR_ANY).first[3] })
+          put (hosts_and_ips + [""]).join("\n"), tmp_file = "/tmp/ssh_keyscan_#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", :mode => 0644
           tmp_out_file = "/tmp/known_hosts_#{Time.now.strftime("%Y%m%d%H%M%S")}.txt"
           run "ssh-keyscan -f #{tmp_file} -t rsa > #{tmp_out_file}"
           run "rm -f #{tmp_file}"
