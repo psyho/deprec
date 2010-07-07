@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.022 (Jul 7, 2010)
+
+* add to known hosts for IP addresses as well as hostnames for nagios recipe
+
 = 2.1.6.021 (Jul 5, 2010)
 
 * fixed writing known hosts file
