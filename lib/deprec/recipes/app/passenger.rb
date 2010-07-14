@@ -26,6 +26,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       set :passenger_rails_autodetect, 'on'
       set :passenger_rails_spawn_method, 'smart' # smart | conservative
       set :passenger_version, '2.2.11'
+      set :passenger_server_aliases, [ ]
 
       desc "Install passenger"
       task :install, :roles => :app do

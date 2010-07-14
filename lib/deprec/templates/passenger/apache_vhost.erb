@@ -2,8 +2,8 @@
 <IfModule passenger_module>
 	<VirtualHost *:80>
 	  ServerName <%= domain %>
-      <%- 4.times do |counter| -%>
-        ServerAlias <%= domain.sub(/.*?\./, "assets#{counter}.") %>
+      <%- passenger_server_aliases.each do |server_alias| -%>
+        ServerAlias <%= server_alias %>
       <%- end %>
 	  DocumentRoot "<%= passenger_document_root %>"
 	  CustomLog <%= apache_log_dir %>/<%= application %>-access.log combined
