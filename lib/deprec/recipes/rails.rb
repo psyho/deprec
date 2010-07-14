@@ -306,6 +306,16 @@ Capistrano::Configuration.instance(:must_exist).load do
         run "cd #{deploy_to}/current && rake db:create RAILS_ENV=#{rails_env}"
       end
 
+      desc "Seed database"
+      task :seed, :roles => :app do
+        run "cd #{deploy_to}/current && rake db:seed RAILS_ENV=#{rails_env}"
+      end
+
+      desc "Redo database, only available if defined in your app"
+      task :redo, :roles => :app do
+        run "cd #{deploy_to}/current && rake db:redo RAILS_ENV=#{rails_env}"
+      end
+
       desc "Run database migrations"
       task :migrate, :roles => :app do
         run "cd #{deploy_to}/current && rake db:migrate RAILS_ENV=#{rails_env}"
