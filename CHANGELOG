@@ -1,5 +1,12 @@
 # deprec changelog
 
+= 2.1.6.023 (Jul 14, 2010)
+
+* added db seed and db redo tasks to rails recipe
+* added server_aliases setting to passenger recipe
+* add setting RackEnv in passenger
+* add to known hosts for IP addresses as well as hostnames for SSH recipe
+
 = 2.1.6.022 (Jul 7, 2010)
 
 * add to known hosts for IP addresses as well as hostnames for nagios recipe
