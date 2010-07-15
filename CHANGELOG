@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.024 (Jul 15, 2010)
+
+* made haproxy configurable
+
 = 2.1.6.023 (Jul 14, 2010)
 
 * added db seed and db redo tasks to rails recipe
