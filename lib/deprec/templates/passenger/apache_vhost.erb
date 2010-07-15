@@ -2,28 +2,55 @@
 <IfModule passenger_module>
 	<VirtualHost *:80>
 	  ServerName <%= domain %>
-      <%- passenger_server_aliases.each do |server_alias| -%>
-        ServerAlias <%= server_alias %>
-      <%- end %>
+	  <% unless passenger_server_aliases.nil? %>
+      	<%- passenger_server_aliases.each do |server_alias| -%>
+      ServerAlias <%= server_alias %>
+      	<%- end %>
+	  <% else %>
+      	<%- 4.times do |counter| -%>
+      ServerAlias <%= domain.sub(/.*?\./, "assets#{counter}.") %>
+      	<%- end %>
+	  <% end %>
+
 	  DocumentRoot "<%= passenger_document_root %>"
+	  <% unless passenger_app_root == false %>
+	  PassengerAppRoot "<%= passenger_app_root || File.dirname(passenger_document_root) %>"
+	  <% end %>
+	
+	  <% if passenger_apache_logging_config %>
+	  <%= passenger_apache_logging_config %>
+	  <% else %>
 	  CustomLog <%= apache_log_dir %>/<%= application %>-access.log combined
 	  ErrorLog <%= apache_log_dir %>/<%= application %>-error.log
+	  <% end %>
 	  
-	  RailsEnv <%= rails_env %>
+	  <% if passenger_rails_3 %>
 	  RackEnv <%= rails_env %>
-	  # RailsAllowModRewrite <%= passenger_rails_allow_mod_rewrite %>
-	  #
-	  # Check for maintenance file and redirect all requests
+	  <% else %>
+	  RailsEnv <%= rails_env %>
+	  <% end %>
+
+      <% if passenger_apache_rewrite_config %>
+	  <%= passenger_apache_rewrite_config %>
+      <% else %>
 	  RewriteEngine On
 	  RewriteCond %{REQUEST_URI} !\.(css|jpg|png|gif)$
-	  # allow requests to server-status and server-info, might be needed if you use monitoring services like fiveruns
 	  RewriteCond %{REQUEST_URI} !server-(status|info)/?$
 	  RewriteCond %{DOCUMENT_ROOT}/system/maintenance.html -f
 	  RewriteCond %{SCRIPT_FILENAME} !maintenance.html
       RewriteRule ^.*$ /system/maintenance.html [L]
+      <% end %>
+
+      <% if passenger_apache_extra_config %>
+	  <%= passenger_apache_extra_config %>
+      <% end %>
+
 	  <Directory "<%= passenger_document_root %>">
 	    Order allow,deny
 	    Allow from all
+		<% if passenger_apache_deflate_html %>
+		AddOutputFilterByType DEFLATE text/html
+		<% end %>
 	  </Directory>
 	</VirtualHost>
 </IfModule>
