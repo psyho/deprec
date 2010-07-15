@@ -11,8 +11,11 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       }
       
+      set :haproxy_user, 'root'
+      set :haproxy_group, 'root'
+      
       # :haproxy_global_options should be a hash of options, in key => value pairs. Values can also be arrays of strings.
-      set :haproxy_global_options => {
+      set :haproxy_global_options, {
         "log" => "/var/log/haproxy.log daemon info",
         "maxconn" => 4096,
         "pidfile" => "/var/run/haproxy.pid",
@@ -22,7 +25,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       # :haproxy_default_options should be a hash of options, in key => value pairs. 
       #  :stats_auth => 'user:password' presence of this setting automatically enables stats
       #  :options => hash of options, in key => value pairs. Values can also be arrays of strings. 
-      set :haproxy_default_options => {
+      set :haproxy_default_options, {
         :stats_auth => 'user:password',
         :options => {
           "option" => [

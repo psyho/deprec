@@ -41,7 +41,7 @@ haproxy_start()
 
 haproxy_stop()
 {
-	start-stop-daemon --stop --user root --pidfile "$PIDFILE" \
+	start-stop-daemon --stop --user <%= haproxy_user %> --pidfile "$PIDFILE" \
 		|| return 2
 	return 0
 }
