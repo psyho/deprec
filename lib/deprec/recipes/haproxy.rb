@@ -11,6 +11,58 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       }
       
+      # :haproxy_global_options should be a hash of options, in key => value pairs. Values can also be arrays of strings.
+      set :haproxy_global_options => {
+        "log" => "/var/log/haproxy.log daemon info",
+        "maxconn" => 4096,
+        "pidfile" => "/var/run/haproxy.pid",
+        "daemon" => true
+      }
+
+      # :haproxy_default_options should be a hash of options, in key => value pairs. 
+      #  :stats_auth => 'user:password' presence of this setting automatically enables stats
+      #  :options => hash of options, in key => value pairs. Values can also be arrays of strings. 
+      set :haproxy_default_options => {
+        :stats_auth => 'user:password',
+        :options => {
+          "option" => [
+            "forwardfor",
+            "httpclose",
+            "redispatch"
+          ],
+          "balance" => "roundrobin",
+          "mode" => "http",
+          "retries" => 3,
+          "maxconn" => 2000,
+          "contimeout" => 5000,
+          "clitimeout" => 50000,
+          "srvtimeout" => 50000
+        }
+      }
+      
+      # :haproxy_instances should contain a hash with at least one key => value pair. The key should be a string
+      #  with the virtual IP address. The value is again a hash with some settings, containing as key => value pairs:
+      #  :name => 'name_of_webfarm'
+      #  :stats_auth => 'user:password' presence of this setting automatically enables stats
+      #  :servers => hash of servers, in key => value pairs:
+      #   'web1' => '127.0.0.1:80 weight 6  maxconn 12 check'
+      #  :options => hash of options, in key => value pairs. Values can also be arrays of strings.      
+      set :haproxy_instances, {
+        "*:81" => {
+          :name => "example_lb",
+          :stats_auth => 'user:password',
+          :servers => {
+            'web1' => '127.0.0.1:80 weight 6  maxconn 12 check',
+            'web2' => '127.0.0.1:80 weight 10 maxconn 12 check'
+          },
+          :options => {
+            "option" => [
+              "httpchk HEAD /check.txt HTTP/1.0"
+            ]
+          }
+        }
+      }
+      
       desc "Install haproxy"
       task :install, :roles => :haproxy do
         install_deps
