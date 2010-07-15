@@ -5,27 +5,31 @@
 # haproxy -f /etc/haproxy.cfg -sf `cat /var/run/haproxy.pid`
 #
 global
-      log /var/log/haproxy.log daemon info
-      maxconn 4096
-      pidfile /var/run/haproxy.pid
-      daemon
+<% haproxy_global_options.each do |key, values| [values].flatten.each do |value| %>
+      <%= key %> <%= value %>
+<% end end %>
 
 defaults
-      option forwardfor
+<% unless haproxy_default_options[:stats_auth].nil? || haproxy_default_options[:stats_auth].empty? %>
       stats enable
-      stats auth myuser:mypass
-      balance roundrobin
-      option httpclose
-      mode http
-      retries 3
-      option redispatch
-      maxconn 2000
-      contimeout 5000
-      clitimeout 50000
-      srvtimeout 50000
+      stats <%= haproxy_default_options[:stats_auth] %>
+<% end %>
+<% (haproxy_default_options[:options] || {}).each do |key, values| [values].flatten.each do |value| %>
+      <%= key %> <%= value %>
+<% end end %>
 
-listen example_lb *:81
-      option httpchk HEAD /check.txt HTTP/1.0
-      server web1 127.0.0.1:80 weight 6  maxconn 12 check # cookie A 
-      server web2 127.0.0.1:80 weight 10 maxconn 12 check # cookie B
-
+<% haproxy_instances.each_with_index do |instance_ipport, i| %>
+<% ipport = instance_ipport.first %>
+<% instance = instance_ipport.last %>
+listen <%= instance[:name] || "no_name_defined_#{i+1}" %> <%= ipport %>
+<% (instance[:options] || {}).each do |key, values| [values].flatten.each do |value| %>
+      <%= key %> <%= value %>
+<% end end %>
+<% unless instance[:stats_auth].nil? || instance[:stats_auth].empty? %>
+      stats enable
+      stats <%= instance[:stats_auth] %>
+<% end %>
+<% (instance[:servers] || {}).each do |key, value| %>
+      <%= key %> <%= value %>
+<% end %>
+<% end %>
