@@ -5,6 +5,8 @@
 # haproxy -f /etc/haproxy.cfg -sf `cat /var/run/haproxy.pid`
 #
 global
+      user <%= haproxy_user %>
+      group <%= haproxy_group %>
 <% haproxy_global_options.each do |key, values| [values].flatten.each do |value| %>
       <%= key %> <%= value %>
 <% end end %>
