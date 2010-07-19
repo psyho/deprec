@@ -25,7 +25,15 @@ Capistrano::Configuration.instance(:must_exist).load do
       set :passenger_rails_autodetect, 'on'
       set :passenger_rails_spawn_method, 'smart' # smart | conservative
       set :passenger_version, '2.2.11'
-      set :passenger_server_aliases, [ ]
+      set :passenger_server_aliases, [ ] # defaults to assets0-3.DOMAIN if nil, outputs no ServerAlias
+
+      set :passenger_apache_logging_config, nil # set to a string to override default logging config
+      set :passenger_rails_3, false
+      set :passenger_apache_deflate_html, false
+      set :passenger_apache_rewrite_config, nil # set to a string to override default rewrite config
+      set :passenger_apache_extra_config, nil # set this to a string to define extra apache options, not covered by the above
+      set :passenger_app_root, nil # set to a string to set an explicit path, set to false to disable the setting,
+                                   # defaults to parent dir of :passenger_document_root
 
       desc "Install passenger"
       task :install, :roles => :app do
