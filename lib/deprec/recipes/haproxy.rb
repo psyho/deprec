@@ -42,6 +42,11 @@ Capistrano::Configuration.instance(:must_exist).load do
           "srvtimeout" => 50000
         }
       }
+
+      task :create_haproxy_user, :roles => :haproxy do
+        deprec2.groupadd(haproxy_group) unless haproxy_group == 'root'
+        deprec2.useradd(haproxy_user, :group => haproxy_group) unless haproxy_user == 'root'
+      end
       
       # :haproxy_instances should contain a hash with at least one key => value pair. The key should be a string
       #  with the virtual IP address. The value is again a hash with some settings, containing as key => value pairs:
@@ -74,6 +79,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         config
         activate
         create_check_file
+        create_haproxy_user
       end
 
       # default config expects this file in web root

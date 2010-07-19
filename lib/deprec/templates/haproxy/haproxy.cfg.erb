@@ -14,7 +14,7 @@ global
 defaults
 <% unless haproxy_default_options[:stats_auth].nil? || haproxy_default_options[:stats_auth].empty? %>
       stats enable
-      stats <%= haproxy_default_options[:stats_auth] %>
+      stats auth <%= haproxy_default_options[:stats_auth] %>
 <% end %>
 <% (haproxy_default_options[:options] || {}).each do |key, values| [values].flatten.each do |value| %>
       <%= key %><% if value && value != true  %> <%= value %><% end %>
