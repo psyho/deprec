@@ -32,6 +32,6 @@ listen <%= instance[:name] || "no_name_defined_#{i+1}" %> <%= ipport %>
       stats <%= instance[:stats_auth] %>
 <% end %>
 <% (instance[:servers] || {}).each do |key, value| %>
-      <%= key %><% if value && value != true  %> <%= value %><% end %>
+      server <%= key %><% if value && value != true  %> <%= value %><% end %>
 <% end %>
 <% end %>
