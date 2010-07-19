@@ -33,6 +33,14 @@ Capistrano::Configuration.instance(:must_exist).load do
     top.deprec.web.reload if web_choice.to_s != 'none'
     top.deprec.rails.setup_database
   end
+  
+  before 'deploy:migrate' do
+    unless ENV['DO_SEED']
+      top.deprec.rails.database.create
+    else
+      top.deprec.rails.database.seed
+    end
+  end
 
   after 'deploy:symlink', :roles => :app do
     top.deprec.rails.symlink_shared_dirs
@@ -302,32 +310,32 @@ Capistrano::Configuration.instance(:must_exist).load do
     namespace :database do
       
       desc "Create database"
-      task :create, :roles => :app do
-        run "cd #{deploy_to}/current && rake db:create RAILS_ENV=#{rails_env}"
+      task :create, :roles => :db, :only => { :primary => true } do
+        run "cd #{deploy_to}/current && rake db:schema:dump || rake db:create RAILS_ENV=#{rails_env}"
       end
 
-      desc "Seed database"
-      task :seed, :roles => :app do
-        run "cd #{deploy_to}/current && rake db:seed RAILS_ENV=#{rails_env}"
+      desc "Create and seed database"
+      task :seed, :roles => :db, :only => { :primary => true } do
+        run "cd #{deploy_to}/current && rake db:schema:dump || rake db:create db:seed RAILS_ENV=#{rails_env}"
       end
 
       desc "Redo database, only available if defined in your app"
-      task :redo, :roles => :app do
+      task :redo, :roles => :db, :only => { :primary => true } do
         run "cd #{deploy_to}/current && rake db:redo RAILS_ENV=#{rails_env}"
       end
 
       desc "Run database migrations"
-      task :migrate, :roles => :app do
+      task :migrate, :roles => :db, :only => { :primary => true } do
         run "cd #{deploy_to}/current && rake db:migrate RAILS_ENV=#{rails_env}"
       end
       
       desc "Run database migrations"
-      task :schema_load, :roles => :app do
+      task :schema_load, :roles => :db, :only => { :primary => true } do
         run "cd #{deploy_to}/current && rake db:schema:load RAILS_ENV=#{rails_env}"
       end
 
       desc "Roll database back to previous migration"
-      task :rollback, :roles => :app do
+      task :rollback, :roles => :db, :only => { :primary => true } do
         run "cd #{deploy_to}/current && rake db:rollback RAILS_ENV=#{rails_env}"
       end
 
