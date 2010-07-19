@@ -1,5 +1,10 @@
 # deprec changelog
 
+= 2.1.6.026 (Jul 19, 2010)
+
+* made passenger more configurable
+* fix in configuration output for haproxy
+
 = 2.1.6.025 (Jul 15, 2010)
 
 * bugfix for haproxy + fix user to run haproxy under
