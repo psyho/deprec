@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.028 (Jul 19, 2010)
+
+* added creation of haproxy user
+
 = 2.1.6.027 (Jul 19, 2010)
 
 * small fix for haproxy recipe
