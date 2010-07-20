@@ -1,0 +1,58 @@
+options {<% syslog_ng_options.reverse_merge(syslog_ng_is_server ? {
+	:keep_hostname => :yes
+} : {}).each do |key, value| %>
+		<%= value.nil? ? "" : "#{key}(#{value.is_a?(String) ? "\"#{value}\"" : value.to_s});" %>
+<% end %>};
+
+<% syslog_ng_sources.reverse_merge(syslog_ng_is_server ? {
+	:s_net => "tcp(ip(#{syslog_ng_server}) port(#{syslog_ng_server_port || 5140}) max-connections(#{syslog_ng_server_max_connections || 10}));"
+} : {}).each do |name, syslog_ng_source_list| %>
+source <%= name %> {
+	<% [syslog_ng_source_list].flatten.each do |syslog_ng_source| %>
+		<%= syslog_ng_source.gsub(/;$/, '') %>;
+	<% end %>
+};
+<% end %>
+
+<% syslog_ng_filters.each do |name, syslog_ng_filter_list| %>
+filter <%= name %> {
+	<% [syslog_ng_filter_list].flatten.each do |syslog_ng_filter| %>
+		<%= syslog_ng_filter.gsub(/;$/, '') %>;
+	<% end %>
+};
+<% end %>
+
+<% syslog_ng_destinations.reverse_merge(syslog_ng_server.nil? || syslog_ng_is_server ? {} : { :d_log_server => "tcp(\"#{syslog_ng_server}\" port(#{syslog_ng_server_port || 5140}));" }).each do |name, syslog_ng_destination_list| %>
+destination <%= name %> {
+	<% [syslog_ng_destination_list].flatten.each do |syslog_ng_destination| %>
+		<%= syslog_ng_destination.gsub(/;$/, '') %>;
+	<% end %>
+};
+<% end %>
+
+<% syslog_ng_logs.reverse_merge(syslog_ng_is_server ? {
+	:s_net => {
+		:df_daemons => {
+			:filters => :f_daemons,
+			:flags => :final
+		}
+	}
+} : {}).each do |source_name, destinations_filters|
+	if source_name == :s_all && syslog_ng_server
+		destinations_filters.reverse_merge!(
+			[ :df_daemons, :d_log_server ] => { :filters => :f_daemons, :flags => :final})
+	end
+   	destinations_filters.each do |destinations, filters| %>
+log {
+		source(<%= source_name %>);
+		<% [filters.is_a?(Hash) ? filters[:filters] : filters].flatten.each do |syslog_filter| %>
+		filter(<%= syslog_filter %>);
+		<% end %>
+		<% [destinations].flatten.each do |destination| %>
+		destination(<%= destination %>);
+		<% end %>
+		<% [filters.is_a?(Hash) ? filters[:flags] : []].flatten.each do |flag| %>
+		flags(<%= flag %>);
+		<% end %>
+};
+<% end %>
