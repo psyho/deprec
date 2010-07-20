@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.031 (Jul 20, 2010)
+
+* renamed syslog to sysklogd
+
 = 2.1.6.030 (Jul 20, 2010)
 
 * small fix to db create/seed during migrations (only when running cold migrations)
