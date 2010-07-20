@@ -1,10 +1,10 @@
-options {<% syslog_ng_options.reverse_merge(syslog_ng_is_server ? {
+options {<% syslog_ng_options.merge(syslog_ng_is_server && syslog_ng_server && syslog_use_default_dynamic_settings ? {
 	:keep_hostname => :yes
 } : {}).each do |key, value| %>
 		<%= value.nil? ? "" : "#{key}(#{value.is_a?(String) ? "\"#{value}\"" : value.to_s});" %>
 <% end %>};
 
-<% syslog_ng_sources.reverse_merge(syslog_ng_is_server ? {
+<% syslog_ng_sources.merge(syslog_ng_is_server && syslog_ng_server && syslog_use_default_dynamic_settings ? {
 	:s_net => "tcp(ip(#{syslog_ng_server}) port(#{syslog_ng_server_port || 5140}) max-connections(#{syslog_ng_server_max_connections || 10}));"
 } : {}).each do |name, syslog_ng_source_list| %>
 source <%= name %> {
@@ -22,7 +22,7 @@ filter <%= name %> {
 };
 <% end %>
 
-<% syslog_ng_destinations.reverse_merge(syslog_ng_server.nil? || syslog_ng_is_server ? {} : { :d_log_server => "tcp(\"#{syslog_ng_server}\" port(#{syslog_ng_server_port || 5140}));" }).each do |name, syslog_ng_destination_list| %>
+<% syslog_ng_destinations.merge(syslog_ng_server.nil? || syslog_ng_is_server || !syslog_use_default_dynamic_settings ? {} : { :d_log_server => "tcp(\"#{syslog_ng_server}\" port(#{syslog_ng_server_port || 5140}));" }).each do |name, syslog_ng_destination_list| %>
 destination <%= name %> {
 	<% [syslog_ng_destination_list].flatten.each do |syslog_ng_destination| %>
 		<%= syslog_ng_destination.gsub(/;$/, '') %>;
@@ -30,7 +30,7 @@ destination <%= name %> {
 };
 <% end %>
 
-<% syslog_ng_logs.reverse_merge(syslog_ng_is_server ? {
+<% syslog_ng_logs.merge(syslog_ng_is_server && syslog_use_default_dynamic_settings ? {
 	:s_net => {
 		:df_daemons => {
 			:filters => :f_daemons,
@@ -38,8 +38,8 @@ destination <%= name %> {
 		}
 	}
 } : {}).each do |source_name, destinations_filters|
-	if source_name == :s_all && syslog_ng_server
-		destinations_filters.reverse_merge!(
+	if source_name == :s_all && syslog_ng_server && syslog_use_default_dynamic_settings && !syslog_ng_is_server
+		destinations_filters.merge!(
 			[ :df_daemons, :d_log_server ] => { :filters => :f_daemons, :flags => :final})
 	end
    	destinations_filters.each do |destinations, filters| %>
@@ -55,4 +55,4 @@ log {
 		flags(<%= flag %>);
 		<% end %>
 };
-<% end %>
+<% end end %>

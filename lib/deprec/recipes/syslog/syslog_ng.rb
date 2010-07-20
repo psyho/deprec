@@ -3,10 +3,11 @@ Capistrano::Configuration.instance(:must_exist).load do
   namespace :deprec do 
     namespace :syslog_ng do
       
+      set :syslog_use_default_dynamic_settings, true
       set :syslog_ng_server, nil
       set :syslog_ng_server_port, 5140
       set :syslog_ng_is_server, false # set this option to true if the server(s) mentioned in your recipe are syslog servers
-      set :syslog_ng_server_max_connections, 100
+      set :syslog_ng_server_max_connections, 10
       
       set :syslog_ng_options, {
         :chain_hostnames => 0,
