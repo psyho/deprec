@@ -1,7 +1,7 @@
-# Copyright 2006-2009 by Mike Bailey. All rights reserved.
+# Copyright 2006-2010 by Mike Bailey, le1t0@github. All rights reserved.
 Capistrano::Configuration.instance(:must_exist).load do 
   namespace :deprec do 
-    namespace :syslog do
+    namespace :sysklogd do
       
       set(:syslog_server) { Capistrano::CLI.ui.ask 'Enter Syslog server hostname' }
 
@@ -15,7 +15,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         apt.install( {:base => %w(sysklogd)}, :stable )
       end
       
-      SYSTEM_CONFIG_FILES[:syslog] =  [
+      SYSTEM_CONFIG_FILES[:sysklogd] =  [
         
        { :template => 'syslog.conf.erb',
          :path => '/etc/syslog.conf',
@@ -31,14 +31,14 @@ Capistrano::Configuration.instance(:must_exist).load do
            
       desc "Generate Syslog configs"
       task :config_gen do
-        SYSTEM_CONFIG_FILES[:syslog].each do |file|
-         deprec2.render_template(:syslog, file)
+        SYSTEM_CONFIG_FILES[:sysklogd].each do |file|
+         deprec2.render_template(:sysklogd, file)
         end
       end
 
       desc "Push Syslog config files to server"
       task :config, :roles => :all_hosts, :except => {:syslog_master => true} do
-        deprec2.push_configs(:syslog, SYSTEM_CONFIG_FILES[:syslog])
+        deprec2.push_configs(:sysklogd, SYSTEM_CONFIG_FILES[:sysklogd])
         restart
       end
 
