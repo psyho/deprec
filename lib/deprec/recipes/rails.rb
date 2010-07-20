@@ -35,10 +35,12 @@ Capistrano::Configuration.instance(:must_exist).load do
   end
   
   before 'deploy:migrate' do
-    unless ENV['DO_SEED']
-      top.deprec.rails.database.create
-    else
-      top.deprec.rails.database.seed
+    if exists?(:running_cold_deploy) && running_cold_deploy
+      unless ENV['DO_SEED']
+        top.deprec.rails.database.create
+      else
+        top.deprec.rails.database.seed
+      end
     end
   end
 
