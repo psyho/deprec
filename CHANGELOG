@@ -1,5 +1,10 @@
 # deprec changelog
 
+= 2.1.6.030 (Jul 20, 2010)
+
+* small fix to db create/seed during migrations (only when running cold migrations)
+* add syslog alternatives
+
 = 2.1.6.029 (Jul 19, 2010)
 
 * add extra database tasks to rails recipe
