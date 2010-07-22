@@ -2,7 +2,7 @@ require 'rubygems'
 
 SPEC = Gem::Specification.new do |s|
   s.name = 'le1t0-deprec'
-  s.version = '2.1.6.034'
+  s.version = '2.1.6.035'
   
   s.authors = ['Le1t0']
   s.description = <<-EOF
@@ -15,7 +15,7 @@ SPEC = Gem::Specification.new do |s|
   s.summary = 'deployment recipes for capistrano'
 
   s.require_paths = ['lib']
-  s.add_dependency('le1t0-capistrano', '= 2.5.18.009')
+  s.add_dependency('le1t0-capistrano', '= 2.5.18.010')
   candidates = Dir.glob("{bin,docs,lib}/**/*") 
   candidates.concat(%w(CHANGELOG COPYING LICENSE README THANKS))
   s.files = candidates.delete_if do |item| 
