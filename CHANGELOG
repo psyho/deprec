@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.034 (Jul 22, 2010)
+
+* Updated dependency for capistrano
+
 = 2.1.6.033 (Jul 22, 2010)
 
 * added syslogger script
