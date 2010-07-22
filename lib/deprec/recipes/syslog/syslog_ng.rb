@@ -122,17 +122,30 @@ Capistrano::Configuration.instance(:must_exist).load do
          :owner => 'root:root'}
          
       ]
-           
+
+      SYSTEM_CONFIG_FILES[:syslog] =  [
+        
+       { :template => 'syslogger',
+         :path => '/usr/local/bin/syslogger',
+         :mode => 0755,
+         :owner => 'root:root'}
+         
+      ]
+                      
       desc "Generate Syslog-ng configs"
       task :config_gen do
         SYSTEM_CONFIG_FILES[:syslog_ng].each do |file|
          deprec2.render_template(:syslog_ng, file)
+        end
+        SYSTEM_CONFIG_FILES[:syslog].each do |file|
+         deprec2.render_template(:syslog, file)
         end
       end
 
       desc "Push Syslog-ng config files to server"
       task :config, :roles => :all_hosts do
         deprec2.push_configs(:syslog_ng, SYSTEM_CONFIG_FILES[:syslog_ng])
+        deprec2.push_configs(:syslog, SYSTEM_CONFIG_FILES[:syslog])
         restart
       end
 

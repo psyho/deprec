@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+
+# argument 1 = facility (i.e. local7)
+# argument 2 = program (i.e. apache)
+# argument 3 = log_level (i.e. notice)
+
+if ((@ARGV + 0) < 3) { 
+  print "usage $0 <facility> <program> <log_level>" ;
+}
+
+use Sys::Syslog qw( :DEFAULT setlogsock );
+
+setlogsock('unix');
+openlog($ARGV[1], 'pid', $ARGV[0]);
+
+while ($log = <STDIN>) {
+  syslog($ARGV[2], $log);
+}
+closelog
