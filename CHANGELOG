@@ -1,5 +1,10 @@
 # deprec changelog
 
+= 2.1.6.033 (Jul 22, 2010)
+
+* added syslogger script
+* some small fixes for syslog-ng recipe
+
 = 2.1.6.032 (Jul 20, 2010)
 
 * some small fixes for syslog-ng recipe
