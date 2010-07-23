@@ -67,7 +67,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         :f_mail => "facility(mail)",
         :f_news => "facility(news)",
         :f_user => "facility(user)",
-        :f_local => "facility(local0,local1,local2,local3,local4,local5,local6,local7)"
+        :f_local => "facility(local0,local1,local2,local3,local4,local5,local6,local7)",
         :f_local0 => "facility(local0)",
         :f_local1 => "facility(local1)",
         :f_local2 => "facility(local2)",
