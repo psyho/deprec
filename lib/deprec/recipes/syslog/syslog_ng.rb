@@ -77,7 +77,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         :f_messages => "level(info,notice,warn) and not facility(auth,authpriv,cron,daemon,mail,news)",
         :f_emerg => "level(emerg)",
         :f_xconsole => "facility(daemon,mail) or level(debug,info,notice,warn) or (facility(news) and level(crit,err,notice))",
-        :f_daemons => "program(\"(rails|apache|postfix|haproxy|mysql|keepalived|sphinx|firewall)-.*\")"
+        :f_daemons => "program(\"(rails|apache|postfix|haproxy|mysql|keepalived|sphinx|firewall)-.*\") or facility(user,local0,local1,local2,local3,local4,local5,local6,local7)"
       }
       set :syslog_ng_destinations, {
         :df_auth => "file(\"/var/log/auth.log\")",
