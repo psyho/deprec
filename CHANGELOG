@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.037 (Jul 23, 2010)
+
+* Updated dependency for capistrano
+
 = 2.1.6.036 (Jul 22, 2010)
 
 * Updated dependency for capistrano
