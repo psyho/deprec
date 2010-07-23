@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.039 (Jul 23, 2010)
+
+* Added facilities to f_daemons for syslog_ng
+
 = 2.1.6.038 (Jul 23, 2010)
 
 * Updated dependency for capistrano
