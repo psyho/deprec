@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.041 (Jul 23, 2010)
+
+* Fixed dependencies
+
 = 2.1.6.040 (Jul 23, 2010)
 
 * Added local* facility syslogging
