@@ -31,16 +31,59 @@ destination <%= name %> {
 <% end %>
 
 <% syslog_ng_logs.merge(syslog_ng_is_server && syslog_use_default_dynamic_settings ? {
+	# on syslog master/central server daemon
 	:s_net => {
 		:df_daemons => {
 			:filters => :f_daemons,
+			:flags => :final
+		},
+		:df_local0 => {
+			:filters => :f_local0,
+			:flags => :final
+		},
+		:df_local1 => {
+			:filters => :f_local1,
+			:flags => :final
+		},
+		:df_local2 => {
+			:filters => :f_local2,
+			:flags => :final
+		},
+		:df_local3 => {
+			:filters => :f_local3,
+			:flags => :final
+		},
+		:df_local4 => {
+			:filters => :f_local4,
+			:flags => :final
+		},
+		:df_local5 => {
+			:filters => :f_local5,
+			:flags => :final
+		},
+		:df_local6 => {
+			:filters => :f_local6,
+			:flags => :final
+		},
+		:df_local7 => {
+			:filters => :f_local7,
 			:flags => :final
 		}
 	}
 } : {}).each do |source_name, destinations_filters|
 	if source_name == :s_all && syslog_ng_server && syslog_use_default_dynamic_settings && !syslog_ng_is_server
+		# on syslog client daemon
 		destinations_filters.merge!(
-			[ :df_daemons, :d_log_server ] => { :filters => :f_daemons, :flags => :final})
+			[ :df_daemons, :d_log_server ] => { :filters => :f_daemons, :flags => :final },
+			[ :df_local0, :d_log_server ] => { :filters => :f_local0, :flags => :final },
+			[ :df_local1, :d_log_server ] => { :filters => :f_local1, :flags => :final },
+			[ :df_local2, :d_log_server ] => { :filters => :f_local2, :flags => :final },
+			[ :df_local3, :d_log_server ] => { :filters => :f_local3, :flags => :final },
+			[ :df_local4, :d_log_server ] => { :filters => :f_local4, :flags => :final },
+			[ :df_local5, :d_log_server ] => { :filters => :f_local5, :flags => :final },
+			[ :df_local6, :d_log_server ] => { :filters => :f_local6, :flags => :final },
+			[ :df_local7, :d_log_server ] => { :filters => :f_local7, :flags => :final }
+		)
 	end
    	destinations_filters.each do |destinations, filters| %>
 log {
