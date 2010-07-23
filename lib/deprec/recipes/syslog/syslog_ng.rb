@@ -67,6 +67,15 @@ Capistrano::Configuration.instance(:must_exist).load do
         :f_mail => "facility(mail)",
         :f_news => "facility(news)",
         :f_user => "facility(user)",
+        :f_local => "facility(local0,local1,local2,local3,local4,local5,local6,local7)"
+        :f_local0 => "facility(local0)",
+        :f_local1 => "facility(local1)",
+        :f_local2 => "facility(local2)",
+        :f_local3 => "facility(local3)",
+        :f_local4 => "facility(local4)",
+        :f_local5 => "facility(local5)",
+        :f_local6 => "facility(local6)",
+        :f_local7 => "facility(local7)",
         :f_uucp => "facility(uucp)",
         :f_at_least_info => "level(info..emerg)",
         :f_at_least_notice => "level(notice..emerg)",
@@ -77,7 +86,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         :f_messages => "level(info,notice,warn) and not facility(auth,authpriv,cron,daemon,mail,news)",
         :f_emerg => "level(emerg)",
         :f_xconsole => "facility(daemon,mail) or level(debug,info,notice,warn) or (facility(news) and level(crit,err,notice))",
-        :f_daemons => "program(\"(rails|apache|postfix|haproxy|mysql|keepalived|sphinx|firewall)-.*\") or facility(user,local0,local1,local2,local3,local4,local5,local6,local7)"
+        :f_daemons => "program(\"(rails|apache|postfix|haproxy|mysql|keepalived|sphinx|firewall)-.*\")"
       }
       set :syslog_ng_destinations, {
         :df_auth => "file(\"/var/log/auth.log\")",
@@ -88,6 +97,15 @@ Capistrano::Configuration.instance(:must_exist).load do
         :df_lpr => "file(\"/var/log/lpr.log\")",
         :df_mail => "file(\"/var/log/mail.log\")",
         :df_user => "file(\"/var/log/user.log\")",
+        :df_local => "file(\"/var/log/daemons/local/$YEAR$MONTH/$DAY/$PROGRAM-$YEAR$MONTH$DAY\")",
+        :df_local0 => "file(\"/var/log/daemons/local0/$YEAR$MONTH/$DAY/$PROGRAM-$YEAR$MONTH$DAY\")",
+        :df_local1 => "file(\"/var/log/daemons/local1/$YEAR$MONTH/$DAY/$PROGRAM-$YEAR$MONTH$DAY\")",
+        :df_local2 => "file(\"/var/log/daemons/local2/$YEAR$MONTH/$DAY/$PROGRAM-$YEAR$MONTH$DAY\")",
+        :df_local3 => "file(\"/var/log/daemons/local3/$YEAR$MONTH/$DAY/$PROGRAM-$YEAR$MONTH$DAY\")",
+        :df_local4 => "file(\"/var/log/daemons/local4/$YEAR$MONTH/$DAY/$PROGRAM-$YEAR$MONTH$DAY\")",
+        :df_local5 => "file(\"/var/log/daemons/local5/$YEAR$MONTH/$DAY/$PROGRAM-$YEAR$MONTH$DAY\")",
+        :df_local6 => "file(\"/var/log/daemons/local6/$YEAR$MONTH/$DAY/$PROGRAM-$YEAR$MONTH$DAY\")",
+        :df_local7 => "file(\"/var/log/daemons/local7/$YEAR$MONTH/$DAY/$PROGRAM-$YEAR$MONTH$DAY\")",
         :df_uucp => "file(\"/var/log/uucp.log\")",
         :df_facility_dot_info => "file(\"/var/log/$FACILITY.info\")",
         :df_facility_dot_notice => "file(\"/var/log/$FACILITY.notice\")",
