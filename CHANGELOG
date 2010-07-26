@@ -1,5 +1,10 @@
 # deprec changelog
 
+= 2.1.6.043 (Jul 26, 2010)
+
+* add keepalived init script + log facility configurability
+* small bugfix in syslog recipe
+
 = 2.1.6.042 (Jul 23, 2010)
 
 * small bugfix in syslog recipe
