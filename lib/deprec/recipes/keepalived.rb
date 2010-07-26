@@ -33,6 +33,8 @@ Capistrano::Configuration.instance(:must_exist).load do
           :scripts => :haproxy
         }
       }
+      
+      set :keepalived_syslog_facility, nil # set to a number from 0 to 7 to use local0 - local7
   
       desc "Install keepalived on server"
       task :install, :roles => :failover do
@@ -48,6 +50,10 @@ Capistrano::Configuration.instance(:must_exist).load do
         {:template => 'keepalived.conf.erb',
          :path => '/etc/keepalived/keepalived.conf',
          :mode => 0644,
+         :owner => 'root:root'},
+        {:template => 'keepalived-init.erb',
+         :path => '/etc/init.d/keepalived',
+         :mode => 0755,
          :owner => 'root:root'}
       ]
     
