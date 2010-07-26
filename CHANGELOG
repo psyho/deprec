@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.044 (Jul 26, 2010)
+
+* added configurability of syslog facility for postfix
+
 = 2.1.6.043 (Jul 26, 2010)
 
 * add keepalived init script + log facility configurability
