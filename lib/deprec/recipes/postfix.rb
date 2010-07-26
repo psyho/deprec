@@ -5,6 +5,7 @@ Capistrano::Configuration.instance(:must_exist).load do
     namespace :postfix do
       
       set(:postfix_relayhost) { Capistrano::CLI.ui.ask "What host should we relay mail through?" } 
+      set :postfix_syslog_facility, 'mail'
       
       desc "Install Postfix"
       task :install, :roles => :mail do
