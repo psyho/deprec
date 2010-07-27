@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.045 (Jul 27, 2010)
+
+* Updated dependency for capistrano
+
 = 2.1.6.044 (Jul 26, 2010)
 
 * added configurability of syslog facility for postfix
