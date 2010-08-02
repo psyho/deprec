@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.046 (Aug 2, 2010)
+
+* upgraded haproxy + removed reload from config task
+
 = 2.1.6.045 (Jul 27, 2010)
 
 * Updated dependency for capistrano
