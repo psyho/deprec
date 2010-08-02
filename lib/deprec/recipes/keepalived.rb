@@ -36,14 +36,23 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       set :keepalived_syslog_facility, nil # set to a number from 0 to 7 to use local0 - local7
   
+      SRC_PACKAGES[:keepalived] = {
+        :md5sum => "6c3065c94bb9e2187c4b5a80f6d8be31  keepalived-1.1.20.tar.gz",
+        :url => "http://www.keepalived.org/software/keepalived-1.1.20.tar.gz"
+      }
+      
       desc "Install keepalived on server"
       task :install, :roles => :failover do
         install_deps
+        deprec2.download_src(SRC_PACKAGES[:keepalived], src_dir)
+        deprec2.install_from_src(SRC_PACKAGES[:keepalived], src_dir)
+        config
+        activate
         update_sysctl
       end
   
       task :install_deps, :roles => :failover do
-        apt.install( {:base => %w(keepalived)}, :stable )
+        apt.install( {:base => %w(build-essential libssl-dev libpopt-dev)}, :stable )
       end
   
       SYSTEM_CONFIG_FILES[:keepalived] = [
