@@ -58,6 +58,8 @@ Capistrano::Configuration.instance(:must_exist).load do
       task :set_access do
         if ssh_users.size > 0
           run "rm -f ~/.ssh/authorized_keys.new"
+          run "touch ~/.ssh/authorized_keys.new"
+          run "chmod 600 ~/.ssh/authorized_keys.new"
           ssh_users.each do |ssh_user|
             keys = [ssh_user_keys[ssh_user]].flatten
             keys.each do |ssh_key|
