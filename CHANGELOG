@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.048 (Aug 3, 2010)
+
+* Make sure authorized_keys doesn't get written with ownership root and world readable
+
 = 2.1.6.047 (Aug 2, 2010)
 
 * upgraded keepalived
