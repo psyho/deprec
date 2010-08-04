@@ -32,6 +32,10 @@ options {
 			:filters => :f_daemons,
 			:flags => :final
 		},
+		:df_kernel => {
+			:filters => :f_kern,
+			:flags => :final
+		},
 		:df_local0 => {
 			:filters => :f_local0,
 			:flags => :final
@@ -72,6 +76,7 @@ options {
 		# on syslog client daemon
 		destinations_filters.merge!(
 			[ :df_daemons, :d_log_server ] => { :filters => :f_daemons, :flags => :final },
+			[ :df_kernel, :d_log_server ] => { :filters => :f_kern, :flags => :final },
 			[ :df_local0, :d_log_server ] => { :filters => :f_local0, :flags => :final },
 			[ :df_local1, :d_log_server ] => { :filters => :f_local1, :flags => :final },
 			[ :df_local2, :d_log_server ] => { :filters => :f_local2, :flags => :final },
