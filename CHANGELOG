@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.052 (Aug 4, 2010)
+
+* added kernel logging rules
+
 = 2.1.6.051 (Aug 4, 2010)
 
 * fixed syslog config writing
