@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.051 (Aug 4, 2010)
+
+* fixed syslog config writing
+
 = 2.1.6.050 (Aug 4, 2010)
 
 * fixed syslog_ng script
