@@ -53,7 +53,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       set :syslog_ng_sources, {
         :s_all => [
           "internal()",
-          "unix-stream(/dev/log)",
+          "unix-stream(\"/dev/log\")",
           "file(\"/proc/kmsg\" log_prefix(\"kernel: \"))"
         ]
       }
@@ -86,7 +86,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         :f_messages => "level(info,notice,warn) and not facility(auth,authpriv,cron,daemon,mail,news)",
         :f_emerg => "level(emerg)",
         :f_xconsole => "facility(daemon,mail) or level(debug,info,notice,warn) or (facility(news) and level(crit,err,notice))",
-        :f_daemons => "program(\"(rails|apache|postfix|haproxy|mysql|keepalived|sphinx|firewall)-.*\")"
+        :f_daemons => "program(\"(rails-|apache-|.*mysqld|Keepalived).*\")"
       }
       set :syslog_ng_destinations, {
         :df_auth => "file(\"/var/log/auth.log\")",
@@ -119,6 +119,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         :df_messages => "file(\"/var/log/messages\")",
         :dp_xconsole => "pipe(\"/dev/xconsole\")",
         :du_all => "usertty(\"*\")",
+        :df_kernel => "file(\"/var/log/daemons/kernel-$HOST/$YEAR$MONTH/$DAY/kernel-$HOST-$YEAR$MONTH$DAY\")",
         :df_daemons => "file(\"/var/log/daemons/$PROGRAM/$YEAR$MONTH/$DAY/$PROGRAM-$YEAR$MONTH$DAY\")"
       }
       
