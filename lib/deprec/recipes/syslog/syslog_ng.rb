@@ -161,24 +161,24 @@ Capistrano::Configuration.instance(:must_exist).load do
       end
 
       desc "Push Syslog-ng config files to server"
-      task :config, :roles => :all_hosts do
+      task :config do
         deprec2.push_configs(:syslog_ng, SYSTEM_CONFIG_FILES[:syslog_ng])
         deprec2.push_configs(:syslog, SYSTEM_CONFIG_FILES[:syslog])
         restart
       end
 
       desc "Start Syslog-ng"
-      task :start, :roles => :all_hosts do
+      task :start do
         run "#{sudo} /etc/init.d/syslog-ng start"
       end
       
       desc "Stop Syslog-ng"
-      task :stop, :roles => :all_hosts do
+      task :stop do
         run "#{sudo} /etc/init.d/syslog-ng stop"
       end
       
       desc "Restart Syslog-ng"
-      task :restart, :roles => :all_hosts do
+      task :restart do
         run "#{sudo} /etc/init.d/syslog-ng restart"
       end
 
