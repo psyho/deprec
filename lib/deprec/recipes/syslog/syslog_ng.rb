@@ -165,7 +165,6 @@ Capistrano::Configuration.instance(:must_exist).load do
       task :config do
         deprec2.push_configs(:syslog_ng, SYSTEM_CONFIG_FILES[:syslog_ng])
         deprec2.push_configs(:syslog, SYSTEM_CONFIG_FILES[:syslog])
-        restart
       end
 
       desc "Start Syslog-ng"
