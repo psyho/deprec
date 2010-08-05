@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.054 (Aug 5, 2010)
+
+* added global configurability of intervals and weights for keepalived scripts
+
 = 2.1.6.053 (Aug 5, 2010)
 
 * disabled auto restart for syslog_ng
