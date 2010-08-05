@@ -148,12 +148,10 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       task :activate_system, :roles => :app do
         sudo "a2enmod passenger"
-        top.deprec.web.reload
       end
       
       task :activate_project, :roles => :app do
         sudo "a2ensite #{application}"
-        top.deprec.web.reload
       end
       
       task :deactivate do
@@ -174,12 +172,10 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       task :deactivate_system, :roles => :app do
         sudo "a2dismod passenger"
-        top.deprec.web.reload
       end
       
       task :deactivate_project, :roles => :app do
         sudo "a2dissite #{application}"
-        top.deprec.web.reload
       end
       
       desc "Restart Application"
