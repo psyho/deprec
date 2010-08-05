@@ -1,5 +1,10 @@
 # deprec changelog
 
+= 2.1.6.053 (Aug 5, 2010)
+
+* disabled auto restart for syslog_ng
+* disabled reload for passenger
+
 = 2.1.6.052 (Aug 4, 2010)
 
 * added kernel logging rules
