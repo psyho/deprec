@@ -3,6 +3,12 @@ Capistrano::Configuration.instance(:must_exist).load do
   namespace :deprec do
     namespace :keepalived do
 
+      set :keepalived_default_script_weight, 2
+      set :keepalived_default_script_interval, 1
+      # the two variables below default to the values above
+      set :keepalived_chk_wanted_state_weight, nil
+      set :keepalived_chk_wanted_state_interval, nil
+
       # :keepalived_scripts should contain a hash where each key is the suffix of the vrrp_script registration,
       # and the value is again a hash, containing as key => value pairs:
       # :script => 'killall -0 haproxy' or any script which returns a 0 or 1 exit value
