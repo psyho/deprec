@@ -72,6 +72,8 @@
 <% if mysql_mysqld_innodb_log_file_size %>innodb_log_file_size = <%= mysql_mysqld_innodb_log_file_size %><% end %>
 
 <% if mysql_mysqld_log %>log = <%= mysql_mysqld_log %><% end %>
+<% if mysql_mysqld_log_error %>log_error = <%= mysql_mysqld_log_error %><% end %>
+<% if mysql_mysqld_log_warnings %>log_warnings = <%= mysql_mysqld_log_warnings %><% end %>
 <% if mysql_mysqld_binlog_do_db %>binlog_do_db = <%= mysql_mysqld_binlog_do_db %><% end %>
 <% if mysql_mysqld_binlog_ignore_db %>binlog_ignore_db = <%= mysql_mysqld_binlog_ignore_db %><% end %>
 <% if mysql_mysqld_log_bin %>log_bin = <%= mysql_mysqld_log_bin %><% end %>

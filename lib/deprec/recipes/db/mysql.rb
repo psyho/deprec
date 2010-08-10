@@ -91,6 +91,8 @@ Capistrano::Configuration.instance(:must_exist).load do
       set :mysql_mysqld_replicate_wild_ignore_table, nil
       
       set :mysql_mysqld_log, nil # i.e. /var/log/mysql/mysql.log
+      set :mysql_mysqld_log_error, nil
+      set :mysql_mysqld_log_warnings, nil
       set :mysql_mysqld_binlog_do_db, nil # i.e. include_database_name
       set :mysql_mysqld_binlog_ignore_db, nil # i.e. include_database_name
       set :mysql_mysqld_log_bin, '/var/log/mysql/mysql-bin.log'
