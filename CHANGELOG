@@ -1,5 +1,9 @@
 # deprec changelog
 
+= 2.1.6.056 (Aug 12, 2010)
+
+* Updated dependency for capistrano
+
 = 2.1.6.055 (Aug 10, 2010)
 
 * added log_error and log_warnings to mysql
