@@ -65,38 +65,48 @@ module Deprec2
     else
       template = ERB.new(IO.read(File.join(DEPREC_TEMPLATES_BASE, app.to_s, template)), nil, '-')
     end
-    rendered_template = template.result(binding)
+    rendered_templates = {}
+    find_servers.collect { |server| server.host }.each do |host|
+      scope host do
+        rendered_templates[host] = template.result(binding)
+      end
+    end
   
     if remote 
       # render to remote machine
       puts 'You need to specify a path to render the template to!' unless path
       exit unless path
       sudo "test -d #{File.dirname(path)} || #{sudo} mkdir -p #{File.dirname(path)}"
-      std.su_put rendered_template, path, '/tmp/', :mode => mode
+      # First argument is empty string, since to be uploaded data is given by the Proc
+      std.su_put "", path, '/tmp/', :mode => mode, :proc => Proc.new { |from, host|
+        rendered_templates[host]
+      }
       sudo "chown #{owner} #{path}" if defined?(owner)
     elsif path 
       # render to local file
-      full_path = File.join('config', stage, app.to_s, path)
-      path_dir = File.dirname(full_path)
-      if File.exists?(full_path)
-        if IO.read(full_path) == rendered_template
-          puts "[skip] File exists and is identical (#{full_path})."
-          return false
-        elsif overwrite?(full_path, rendered_template)
-          File.delete(full_path)
-        else
-          puts "[skip] Not overwriting #{full_path}"
-          return false
+      find_servers.collect { |server| server.host }.each do |host|
+        full_path = File.join('config', stage, host, app.to_s, path)
+        path_dir = File.dirname(full_path)
+        if File.exists?(full_path)
+          if IO.read(full_path) == rendered_templates[host]
+            puts "[skip] File exists and is identical (#{full_path})."
+            next
+          elsif overwrite?(full_path, rendered_templates[host])
+            File.delete(full_path)
+          else
+            puts "[skip] Not overwriting #{full_path}"
+            next
+          end
         end
+        FileUtils.mkdir_p "#{path_dir}" if ! File.directory?(path_dir)
+        # added line above to make windows compatible
+        # system "mkdir -p #{path_dir}" if ! File.directory?(path_dir) 
+        File.open(full_path, 'w'){|f| f.write rendered_templates[host] }
+        puts "[done] #{full_path} written"
       end
-      FileUtils.mkdir_p "#{path_dir}" if ! File.directory?(path_dir)
-      # added line above to make windows compatible
-      # system "mkdir -p #{path_dir}" if ! File.directory?(path_dir) 
-      File.open(full_path, 'w'){|f| f.write rendered_template }
-      puts "[done] #{full_path} written"
     else
       # render to string
-      return rendered_template
+      return rendered_templates
     end
   end
   
@@ -146,10 +156,18 @@ module Deprec2
     template_name += '.conf' if File.extname(template_name) == '' # XXX this to be removed
 
     file = File.join(templates_dir, template_name)
-    buffer = render :template => File.read(file)
+    buffers = {}
+    find_servers.collect { |server| server.host }.each do |host|
+      scope host do
+        buffers[host] = render :template => File.read(file)
+      end
+    end
 
     temporary_location = "/tmp/#{template_name}"
-    put buffer, temporary_location
+    # First argument is empty string, since to be uploaded data is given by the Proc
+    put "", temporary_location, :proc => Proc.new { |from, host|
+      buffers[host]
+    }
     sudo "cp #{temporary_location} #{destination_file_name}"
     delete temporary_location
   end
@@ -161,8 +179,9 @@ module Deprec2
     stage = exists?(:stage) ? fetch(:stage).to_s : ''
     
     files.each do |file|
-      full_local_path = File.join('config', stage, app, file[:path])
-      if File.exists?(full_local_path)
+      full_local_paths = find_servers.collect { |server| File.join('config', stage, server.host, app, file[:path]) }
+      if full_local_paths.all? { |full_local_path| File.exists?(full_local_path) }
+        full_local_path_with_parameter = File.join('config', stage, '%{host}', app, file[:path])
         # If the file path is relative we will prepend a path to this projects
         # own config directory for this service.
         if file[:path][0,1] != '/'
@@ -171,7 +190,7 @@ module Deprec2
           full_remote_path = file[:path]
         end
         sudo "test -d #{File.dirname(full_remote_path)} || #{sudo} mkdir -p #{File.dirname(full_remote_path)}"
-        std.su_put File.read(full_local_path), full_remote_path, '/tmp/', :mode=>file[:mode]
+        std.su_put full_local_path_with_parameter, full_remote_path, '/tmp/', :mode=>file[:mode]
         sudo "chown #{file[:owner]} #{full_remote_path}"
       else
         # Render directly to remote host.
