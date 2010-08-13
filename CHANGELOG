@@ -1,5 +1,10 @@
 # deprec changelog
 
+= 2.1.6.057 (Aug 13, 2010)
+
+* Updated dependency for capistrano
+* add-multiple-recipe-configs-per-stage
+
 = 2.1.6.056 (Aug 12, 2010)
 
 * Updated dependency for capistrano
