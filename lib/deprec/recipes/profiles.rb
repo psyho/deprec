@@ -221,5 +221,89 @@ Capistrano::Configuration.instance(:must_exist).load do
       "#{executing_recipe}_#{executing_task}"
     end
   end
+  
+  profile :rails_stack, :install do |p, r|
+    r.ruby
+    r.rails
+    r.svn
+    r.git
+    r.apache
+    r.passenger
+    r.s3utils
+    r.monit if use_monit
+    r.logrotate if use_logrotate
+  end
+
+  profile :ubuntu_base do |p, r|
+    r.call.ubuntu.remove_admin_group_from_users :config
+    r.iptables
+    r.postfix
+    r.ntp
+    r.ubuntu :install
+    r.nagios_plugins :install
+    r.ubuntu.utils.bash :config
+    r.syslog_ng
+  end
+
+  profile :app_base do |p, r|
+    p.ubuntu_base
+    p.rails_stack :install
+    r.imagemagick :install
+    r.aspell :install
+    r.sphinx :install
+    r.java
+  end
+
+  profile :app_server do |p, r|
+    p.app_base
+    r.god
+    r.call.passenger.config_gen_system :config_gen
+    r.glusterfs :install
+    r.call.glusterfs.config_client :config
+    r.call.glusterfs.activate_client :activate
+    r.call.glusterfs.start_client :start
+    r.call.haproxy.create_check_file :install
+  end
+
+  profile :db_server do |p, r|
+    p.app_base
+    r.mysql
+    r.keepalived
+    r.redis
+  end
+
+  profile :single_server do |p,r|
+    p.app_base
+    r.call.passenger.config_gen_system :config_gen
+    r.mysql
+    r.god
+    r.redis
+  end
+  
+  profile :shared_server do |p, r|
+    p.ubuntu_base
+    r.keepalived
+    r.redis
+    r.glusterfs :install
+    r.call.glusterfs.config_server :config
+    r.call.glusterfs.activate_server :activate
+    r.call.glusterfs.start_server :start
+  end
+
+  profile :backups_server do |p, r|
+    p.ubuntu_base
+    p.rails_stack :install
+  end
+
+  profile :xen_server do |p, r|
+    p.ubuntu_base
+    r.haproxy
+    r.keepalived
+    r.apache
+    r.amcc_3ware :install
+    r.xentools :config_gen, :install, :config
+    r.call.xen.create_images :activate
+    r.call.xen.start_images :start
+  end
 
 end
