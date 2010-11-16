@@ -22,6 +22,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       end
       
       task :install_deps do
+        top.deprec.mri.install_deps
         apt.install({:base => %w(libssl-dev libmysqlclient15-dev libreadline5-dev)}, :stable)
       end
       
