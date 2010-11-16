@@ -5,9 +5,15 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       # see iptables-init script and iptables-default file for syntax
       set :iptables_allowed, "tcp:22,80,443"
+      set :iptables_drop, ""
+      set :iptables_reject, ""
       set :iptables_forwards, ""
+      set :iptables_rate_limits, ""
       set :iptables_binary, "/sbin/iptables"
       set :iptables_save_binary, "/sbin/iptables-save"
+      set :iptables_ipfrag_high_thresh, 262144
+      set :iptables_ipfrag_low_thresh, 196608
+      set :iptables_ipfrag_time, 30
 
       task :status do
         sudo "iptables -L -v"
@@ -27,10 +33,6 @@ Capistrano::Configuration.instance(:must_exist).load do
         {:template => 'firewall-init.erb',
           :path => '/etc/init.d/firewall',
           :mode => 0755,
-          :owner => 'root:root'},
-        {:template => 'firewall-default.erb',
-          :path => '/etc/default/firewall',
-          :mode => 0755,
           :owner => 'root:root'}
       ]
 
@@ -43,8 +45,7 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       desc "Push iptables config files to server"
       task :config do
-        sudo "test -e /etc/default/firewall && cp /etc/default/firewall /etc/default/firewall.bak || true"
-        sudo "test -e /etc/init.d/firewall && cp /etc/init.d/firewall /etc/init.d/firewall.bak || true"
+        sudo "test -e /etc/init.d/firewall && sudo cp /etc/init.d/firewall /etc/init.d/firewall.bak || true"
         deprec2.push_configs(:iptables, SYSTEM_CONFIG_FILES[:iptables])
         deprec2.append_to_file_if_missing('/etc/services', 'vrrp           112/raw                          # vrrpd daemon')
       end
@@ -54,8 +55,7 @@ Capistrano::Configuration.instance(:must_exist).load do
         transaction do
           on_rollback {
             puts `git checkout config/#{stage}/iptables/etc`
-            sudo "test -e /etc/default/firewall.bak && mv /etc/default/firewall.bak /etc/default/firewall || true"
-            sudo "test -e /etc/init.d/firewall.bak && mv /etc/init.d/firewall.bak /etc/init.d/firewall || true"
+            sudo "test -e /etc/init.d/firewall.bak && sudo mv /etc/init.d/firewall.bak /etc/init.d/firewall || true"
             sudo "/etc/init.d/firewall start &"
           }
           config_gen
@@ -67,7 +67,6 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       desc "Revert iptables config on server"
       task :revert do
-        sudo "test -e /etc/default/firewall.bak && mv /etc/default/firewall.bak /etc/default/firewall || true"
         sudo "test -e /etc/init.d/firewall.bak && mv /etc/init.d/firewall.bak /etc/init.d/firewall || true"
       end
 
