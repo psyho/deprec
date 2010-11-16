@@ -12,6 +12,13 @@ module Deprec2
     yield
     ENV['ROLES'] = old_roles.to_s unless ENV['HOSTS']
   end
+
+  def filter_hosts(hostfilter)
+    old_hostfilter = ENV['HOSTFILTER']
+    ENV['HOSTFILTER'] = hostfilter.to_s
+    yield
+    ENV['HOSTFILTER'] = old_hostfilter.to_s
+  end     
   
   # Temporarily ignore ROLES and HOSTS
   def ignoring_roles_and_hosts
@@ -44,6 +51,7 @@ module Deprec2
     template = options[:template]
     path = options[:path] || nil
     remote = options[:remote] || false
+    compare = options[:compare] || false
     mode = options[:mode] || 0755
     owner = options[:owner] || nil
     stage = exists?(:stage) ? fetch(:stage).to_s : ''
@@ -72,8 +80,23 @@ module Deprec2
       puts 'You need to specify a path to render the template to!' unless path
       exit unless path
       sudo "test -d #{File.dirname(path)} || #{sudo} mkdir -p #{File.dirname(path)}"
-      std.su_put rendered_template, path, '/tmp/', :mode => mode
-      sudo "chown #{owner} #{path}" if defined?(owner)
+      # First argument for the su_put calls is empty string, since to be uploaded data is given by the Proc
+      if compare
+        run "[ -e #{path} ] && echo OK" do |channel, stream, data|
+          if data.strip == "OK"
+            std.su_put "", tmpfile = "/tmp/#{File.basename(path)}.#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", '/tmp/', :mode=>mode, :proc => Proc.new { |from, host|
+              rendered_templates[host]
+            }
+            sudo "diff #{path} #{tmpfile} || true"
+            sudo "rm -f #{tmpfile}"
+          end
+        end
+      else
+        std.su_put "", path, '/tmp/', :mode => mode, :proc => Proc.new { |from, host|
+          rendered_templates[host]
+        }
+        sudo "chown #{owner} #{path}" if defined?(owner)
+      end
     elsif path 
       # render to local file
       full_path = File.join('config', stage, app.to_s, path)
@@ -149,14 +172,29 @@ module Deprec2
     buffer = render :template => File.read(file)
 
     temporary_location = "/tmp/#{template_name}"
-    put buffer, temporary_location
-    sudo "cp #{temporary_location} #{destination_file_name}"
-    delete temporary_location
+    # First argument for put calls is empty string, since to be uploaded data is given by the Proc
+    if compare
+      run "[ -e #{destination_file_name} ] && echo OK" do |channel, stream, data|
+        if data.strip == "OK"
+          put "", tmpfile = "/tmp/#{File.basename(destination_file_name)}.#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", :proc => Proc.new { |from, host|
+            buffers[host]
+          }
+          sudo "diff #{destination_file_name} #{tmpfile} || true"
+          sudo "rm -f #{tmpfile}"
+        end
+      end
+    else
+      put "", temporary_location, :proc => Proc.new { |from, host|
+        buffers[host]
+      }
+      sudo "cp #{temporary_location} #{destination_file_name}"
+      delete temporary_location
+    end
   end
   
   # Copy configs to server(s). Note there is no :pull task. No changes should 
   # be made to configs on the servers so why would you need to pull them back?
-  def push_configs(app, files)   
+  def push_configs(app, files, compare = false)   
     app = app.to_s
     stage = exists?(:stage) ? fetch(:stage).to_s : ''
     
@@ -171,8 +209,18 @@ module Deprec2
           full_remote_path = file[:path]
         end
         sudo "test -d #{File.dirname(full_remote_path)} || #{sudo} mkdir -p #{File.dirname(full_remote_path)}"
-        std.su_put File.read(full_local_path), full_remote_path, '/tmp/', :mode=>file[:mode]
-        sudo "chown #{file[:owner]} #{full_remote_path}"
+        if compare
+          run "[ -e #{full_remote_path} ] && echo OK" do |channel, stream, data|
+            if data.strip == "OK"
+              std.su_put full_local_path_with_parameter, tmpfile = "/tmp/#{File.basename(full_remote_path)}.#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", '/tmp/', :mode=>file[:mode]
+              sudo "diff #{full_remote_path} #{tmpfile} || true"
+              sudo "rm -f #{tmpfile}"
+            end
+          end
+        else
+          std.su_put full_local_path_with_parameter, full_remote_path, '/tmp/', :mode=>file[:mode]
+          sudo "chown #{file[:owner]} #{full_remote_path}"
+        end
       else
         # Render directly to remote host.
         render_template(app, file.merge(:remote => true))
