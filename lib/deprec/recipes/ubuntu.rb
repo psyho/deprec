@@ -5,15 +5,36 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       set :ubuntu_default_term, :linux
       set :ubuntu_packages_to_install, %w(cron nmap nano bind9-host man-db screen dnsutils iptraf apache2-utils makepasswd psmisc)
+      set :ubuntu_apt_preferences, nil # set to a string to upload /etc/apt/preferences
+      set :ubuntu_users_remove_admin_group, [] # set to one or more users who should be part of sudo group, but not admin group (for /etc/sudoers to work by default)
 
+      SYSTEM_CONFIG_FILES[:ubuntu] = [
+        
+        {:template => "getlibs.erb",
+         :path => '/usr/local/bin/getlibs',
+         :mode => 0755,
+         :owner => 'root:root'}
+         
+      ]
+      
       desc "apt-get update. Resynchronize the package index files from their sources."
       task :update do
+        top.deprec.ubuntu.upload_apt_preferences
         apt.update
       end
       
       desc "Install useful ubuntu packages"
       task :install do
         apt.install( {:base => ubuntu_packages_to_install}, :stable )
+      end
+      
+      desc "Install 32 bit library support"
+      task :install_32bit_libs_support do
+        # support 32-bit builds on 64-bit
+        apt.install( {:base => %w(gcc-multilib libc6-i386 libc6-dev-i386)}, :stable )
+        SYSTEM_CONFIG_FILES[:ubuntu].each do |file|
+          deprec2.render_template(:ubuntu, file.merge(:remote => true))
+        end
       end
       
       desc "apt-get upgrade. Install the newest versions of all packages currently
@@ -38,6 +59,20 @@ Capistrano::Configuration.instance(:must_exist).load do
         # XXX There's one more - add it!
       end
       
+      task :remove_admin_group_from_users do
+        ([ubuntu_users_remove_admin_group] || []).flatten.each do |user|
+          sudo "perl -p -i -e 's/^(admin:x:[0-9]+:)([^,]+,)*#{user}(,[^,]+)*/$1/' /etc/group"
+        end
+      end
+      
+      task :upload_apt_preferences do
+        if ubuntu_apt_preferences
+          put ubuntu_apt_preferences, "/tmp/preferences", :mode => 0644
+          sudo "chown root:root /tmp/preferences"
+          sudo "mv /tmp/preferences /etc/apt/"
+        end
+      end
+
       namespace :utils do
         
         namespace :bash do
