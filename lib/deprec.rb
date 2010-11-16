@@ -39,4 +39,18 @@ Capistrano::Configuration.instance.deprec.namespaces.keys.each do |ns_name|
       end
     end
   end
+  unless ns.respond_to?(:check_roles)
+    Capistrano::Configuration.instance.namespace :deprec do
+      namespace ns_name do
+        task :check_roles do
+          user_defined_roles = roles.keys
+          recipe_declared_roles = Capistrano::Configuration.instance.deprec.send(ns_name).tasks.collect { |k,v| v.options.has_key?(:roles) ? v.options[:roles] : nil }.compact.flatten.uniq
+          
+          missing_roles = recipe_declared_roles - user_defined_roles
+          
+          abort "You should define role(s): #{missing_roles.join(', ')}" unless missing_roles.empty?
+        end
+      end
+    end
+  end
 end
