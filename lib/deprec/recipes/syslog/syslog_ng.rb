@@ -124,12 +124,12 @@ Capistrano::Configuration.instance(:must_exist).load do
       }
       
       desc "Install syslog-ng"
-      task :install do
+      task :install, :roles => :syslog do
         install_deps
       end
 
       # install dependencies for syslog-ng
-      task :install_deps do
+      task :install_deps, :roles => :syslog do
         apt.install( {:base => %w(syslog-ng)}, :stable )
       end
       
@@ -162,23 +162,23 @@ Capistrano::Configuration.instance(:must_exist).load do
       end
 
       desc "Push Syslog-ng config files to server"
-      task :config do
+      task :config, :roles => :syslog do
         deprec2.push_configs(:syslog_ng, SYSTEM_CONFIG_FILES[:syslog_ng])
         deprec2.push_configs(:syslog, SYSTEM_CONFIG_FILES[:syslog])
       end
 
       desc "Start Syslog-ng"
-      task :start do
+      task :start, :roles => :syslog do
         run "#{sudo} /etc/init.d/syslog-ng start"
       end
       
       desc "Stop Syslog-ng"
-      task :stop do
+      task :stop, :roles => :syslog do
         run "#{sudo} /etc/init.d/syslog-ng stop"
       end
       
       desc "Restart Syslog-ng"
-      task :restart do
+      task :restart, :roles => :syslog do
         run "#{sudo} /etc/init.d/syslog-ng restart"
       end
 
