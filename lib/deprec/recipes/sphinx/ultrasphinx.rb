@@ -3,7 +3,7 @@ Capistrano::Configuration.instance(:must_exist).load do
   namespace :deprec do 
     namespace :ultrasphinx do
       
-      SRC_PACKAGES[:sphinx] = {
+      SRC_PACKAGES[:ultrasphinx] = {
         :filename => 'sphinx-0.9.8-rc2.tar.gz',   
         :dir => 'sphinx-0.9.8-rc2',  
         :url => "http://www.sphinxsearch.com/downloads/sphinx-0.9.8-rc2.tar.gz",
@@ -18,8 +18,8 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       desc "install Sphinx Search Engine"
       task :install, :roles => :sphinx do
-        deprec2.download_src(SRC_PACKAGES[:sphinx], src_dir)
-        deprec2.install_from_src(SRC_PACKAGES[:sphinx], src_dir)
+        deprec2.download_src(SRC_PACKAGES[:ultrasphinx], src_dir)
+        deprec2.install_from_src(SRC_PACKAGES[:ultrasphinx], src_dir)
       end
     
       # install dependencies for sphinx
