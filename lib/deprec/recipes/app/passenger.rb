@@ -5,10 +5,22 @@ Capistrano::Configuration.instance(:must_exist).load do
           
       set(:passenger_install_dir) {
         if ruby_choice == :ree
-          base_dir = "#{ree_install_dir}/lib/ruby/gems/1.8/gems/"
-          latest_passenger_version = capture("ls -d #{base_dir + 'passenger-*'} | tail -1").chomp
+          "#{ree_install_dir}/lib/ruby/gems/1.8/gems/passenger-#{passenger_version}"
+        elsif ruby_choice == :rvm && (rvm_default_ruby || 'custom').to_sym != :system
+          ruby_dir = capture("rvm info homes").split("\n").grep(/^\s*gem:/).first.split(/\s/).select { |x| !x.empty? && x != "gem:" }.first.gsub(/\"/, '')
+          "#{ruby_dir}/gems/passenger-#{passenger_version}"
         else
           "/usr/local/lib/ruby/gems/1.8/gems/passenger-#{passenger_version}"
+        end
+      }
+      
+      set(:passenger_ruby) {
+        if ruby_choice == :ree
+          "#{ree_install_dir}/bin/ruby"
+        elsif ruby_choice == :rvm
+          rvm_default_ruby.to_sym == :system ? "/usr/local/bin/passenger_ruby" : File.join(capture("pwd").chomp, '.rvm', 'bin', 'passenger_ruby')
+        else
+          "/usr/local/bin/ruby"
         end
       }
 
@@ -35,24 +47,33 @@ Capistrano::Configuration.instance(:must_exist).load do
       set :passenger_app_root, nil # set to a string to set an explicit path, set to false to disable the setting,
                                    # defaults to parent dir of :passenger_document_root
 
+      set :passenger_disable_modules, []
+      set :passenger_enable_modules, []
+      set :passenger_disable_sites, []
+      set :passenger_extra_vhosts, {} # key should be name of file in /etc/apache2/sites-available, value should be contents
+
       desc "Install passenger"
-      task :install, :roles => :app do
+      task :install, :roles => :passenger do
         install_deps
         gem2.install 'passenger', passenger_version
-        sudo "passenger-install-apache2-module -a"
+        if ruby_choice == :rvm
+          run "rvmsudo passenger-install-apache2-module -a"
+        else
+          sudo "passenger-install-apache2-module -a"
+        end
         initial_config_push
         activate_system
       end
       
       # Install dependencies for Passenger
-      task :install_deps, :roles => :app do
+      task :install_deps, :roles => :passenger do
         apt.install( {:base => %w(apache2-mpm-prefork apache2-prefork-dev rsync)}, :stable )
         gem2.install 'fastthread'
         gem2.install 'rack'
         gem2.install 'rake'
       end
       
-      task :initial_config_push, :roles => :web do
+      task :initial_config_push, :roles => :passenger do
         # XXX Non-standard!
         # We need to push out the .load and .conf files for Passenger
         SYSTEM_CONFIG_FILES[:passenger].each do |file|
@@ -109,48 +130,79 @@ Capistrano::Configuration.instance(:must_exist).load do
       end
 
       desc "Push Passenger config files (system & project level) to server"
-      task :config, :roles => :app do
+      task :config, :roles => :passenger do
         config_system
         config_project  
       end
 
       desc "Push Passenger configs (system level) to server"
-      task :config_system, :roles => :app do
+      task :config_system, :roles => :passenger do
         deprec2.push_configs(:passenger, SYSTEM_CONFIG_FILES[:passenger])
+        symlink_extra_apache_vhosts
+        disable_modules
+        enable_modules
+        disable_sites
         activate_system
       end
 
       desc "Push Passenger configs (project level) to server"
-      task :config_project, :roles => :app do
+      task :config_project, :roles => :passenger do
         deprec2.push_configs(:passenger, PROJECT_CONFIG_FILES[:passenger])
         symlink_apache_vhost
         activate_project
         symlink_logrotate_config
       end
       
-      task :symlink_logrotate_config, :roles => :app do
+      task :symlink_logrotate_config, :roles => :passenger do
         sudo "ln -sf #{deploy_to}/passenger/logrotate.conf /etc/logrotate.d/passenger-#{application}"
       end
       
       # Passenger runs Rails as the owner of this file.
-      task :set_owner_of_environment_rb, :roles => :app do
+      task :set_owner_of_environment_rb, :roles => :passenger do
         sudo "chown  #{app_user} #{current_path}/config/environment.rb"
       end
       
-      task :symlink_apache_vhost, :roles => :app do
+      task :symlink_apache_vhost, :roles => :passenger do
         sudo "ln -sf #{deploy_to}/passenger/apache_vhost #{apache_vhost_dir}/#{application}"
       end
       
-      task :activate, :roles => :app do
+      task :symlink_extra_apache_vhosts, :roles => :passenger do
+        passenger_extra_vhosts.each do |name, vhost|
+          put vhost, tmp_file = "/tmp/apache_default_vhost_#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", :mode => 0644
+          sudo "chown root:root #{tmp_file}"
+          sudo "mv #{tmp_file} /etc/apache2/sites-available/#{name}"
+          sudo "a2ensite #{name}"
+        end
+      end
+      
+      task :disable_modules, :roles => :passenger do
+        passenger_disable_modules.each do |apache_module|
+          sudo "a2dismod #{apache_module}"
+        end
+      end
+
+      task :enable_modules, :roles => :passenger do
+        passenger_enable_modules.each do |apache_module|
+          sudo "a2enmod #{apache_module}"
+        end
+      end
+
+      task :disable_sites, :roles => :passenger do
+        passenger_disable_sites.each do |apache_vhost|
+          sudo "a2dissite #{apache_vhost}"
+        end
+      end
+      
+      task :activate, :roles => :passenger do
         activate_system
         activate_project
       end
       
-      task :activate_system, :roles => :app do
+      task :activate_system, :roles => :passenger do
         sudo "a2enmod passenger"
       end
       
-      task :activate_project, :roles => :app do
+      task :activate_project, :roles => :passenger do
         sudo "a2ensite #{application}"
       end
       
@@ -170,16 +222,16 @@ Capistrano::Configuration.instance(:must_exist).load do
         puts
       end
       
-      task :deactivate_system, :roles => :app do
+      task :deactivate_system, :roles => :passenger do
         sudo "a2dismod passenger"
       end
       
-      task :deactivate_project, :roles => :app do
+      task :deactivate_project, :roles => :passenger do
         sudo "a2dissite #{application}"
       end
       
       desc "Restart Application"
-      task :restart, :roles => :app do
+      task :restart, :roles => :passenger do
         run "#{sudo} touch #{current_path}/tmp/restart.txt"
       end
       
