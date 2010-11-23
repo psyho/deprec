@@ -230,8 +230,6 @@ Capistrano::Configuration.instance(:must_exist).load do
     r.apache
     r.passenger
     r.s3utils
-    r.monit if use_monit
-    r.logrotate if use_logrotate
   end
 
   profile :ubuntu_base do |p, r|
