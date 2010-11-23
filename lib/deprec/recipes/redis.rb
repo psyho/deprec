@@ -7,14 +7,9 @@ Capistrano::Configuration.instance(:must_exist).load do
       set :redis_group, 'redis'
       
       SRC_PACKAGES[:redis] = {
-        :md5sum => '0c5355e57606523f9e8ce816db5e542f  redis-1.2.6.tar.gz',
-        :filename => 'redis-1.2.6.tar.gz',
-        :dir => 'redis-1.2.6',
-        :url => "http://redis.googlecode.com/files/redis-1.2.6.tar.gz",
-        :unpack => "tar zxf redis-1.2.6.tar.gz;",
-        :make => 'make;',
+        :md5sum => '7799de79f36ebdb73bcb8f09816d1ac3  redis-2.0.3.tar.gz',
+        :url => "http://redis.googlecode.com/files/redis-2.0.3.tar.gz",
         :configure => nil,
-        :install => "install -t /usr/local/bin redis-server redis-benchmark redis-cli redis-stat; install -o #{redis_user} -g #{redis_group} -d /var/lib/redis /var/log/redis"
       }
       
       desc "install Redis"
