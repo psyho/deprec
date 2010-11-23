@@ -1,7 +1,4 @@
-#!/bin/sh
-#
-#  This script setups the ubuntu guests up properly.
-#
+#!/bin/bash
 
 prefix=$1
 
@@ -14,4 +11,4 @@ else
    . ./hooks/common.sh
 fi
 
-# add your custom commands here
+chroot ${prefix} umount /dev/pts

@@ -1,11 +1,3 @@
-def handle_xen_images(&block)
-  do_xen_images = (ENV['ONLY'] || '').split(',')
-  xen_images.each do |xen_image|
-    next if do_xen_images.size > 0 && !do_xen_images.include?(xen_image[:hostname])
-    yield(xen_image)
-  end
-end
-
 # Copyright 2006-2010 by Mike Bailey, le1t0@github. All rights reserved.
 Capistrano::Configuration.instance(:must_exist).load do 
   namespace :deprec do
@@ -23,7 +15,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       #     :swap => '2Gb',
       #     :ip => '10.0.2.1',
       #     :mac => '00:16:3e:00:00:01',
-      #     :vcups => 3, # specify amount of vcpus to use, this will be put in the VM config in /etc/xen/
+      #     :vcpus => 3, # specify amount of vcpus to use, this will be put in the VM config in /etc/xen/
       #     :cpus => '1,3,6', # specify list of cpus to use, this will be put in the VM config in /etc/xen/
       #     :arch => 'i386' # specify to create an i386 VM if you have a x86_64 host for example; optional.
       #   },
@@ -37,7 +29,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       #     :swap => '2Gb',
       #     :ip => '10.0.2.1',
       #     :mac => '00:16:3e:00:00:01',
-      #     :vcups => 3, # specify amount of vcpus to use, this will be put in the VM config in /etc/xen/
+      #     :vcpus => 3, # specify amount of vcpus to use, this will be put in the VM config in /etc/xen/
       #     :cpus => '1,3,6', # specify list of cpus to use, this will be put in the VM config in /etc/xen/
       #   } 
       # ]
@@ -251,46 +243,122 @@ Capistrano::Configuration.instance(:must_exist).load do
       # The images to create are matched on the :hostname value in :xen_images
       desc "Create Xen images"
       task :create_images, :roles => :dom0 do
-        handle_xen_images do |xen_image|
-          args = []
-          vcpus = xen_image.delete(:vcpus)
-          cpus = xen_image.delete(:cpus)
-          xen_image.each do |k,v|
-            args << "--#{k}='#{v}'"
+        do_xen_images = (ENV['ONLY'] || '').split(',')
+        xen_images_list = {}
+        find_servers.collect { |server| server.host }.each do |host|
+          scope host do
+            xen_images_list[host] = (xen_images || []).collect do |xen_image|
+                args = ([xen_image[:hostname]] + xen_image.collect do |k,v|
+                  "--#{k}=#{v}" unless [ :vcpus, :cpus ].include?(k)
+                end.compact).join(' ')
+                cpus = [xen_image[:hostname], xen_image[:vcpus] || 1, xen_image[:cpus]].compact.join(' ')
+                do_xen_images.size == 0 || do_xen_images.include?(xen_image[:hostname]) ? [ args, cpus ] : nil
+              end.compact
           end
-          cmd = "sh -c \"[ -e /etc/xen/#{xen_image[:hostname]}.cfg ] || /usr/bin/xen-create-image #{args.join(' ')}\""
-          sudo cmd
-          deprec2.append_to_file_if_missing("/etc/xen/#{xen_image[:hostname]}.cfg", "vcpus = '#{vcpus}'") unless vcpus.nil?
-          deprec2.append_to_file_if_missing("/etc/xen/#{xen_image[:hostname]}.cfg", "cpus = '#{cpus}'") unless cpus.nil?
         end
+
+        std.su_put "", tmpfile_xi = "/tmp/xen_images.#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", '/tmp/', :mode=>0644, :proc => Proc.new { |from, host|
+          image_list = xen_images_list[host].collect { |ar| ar[0] }.join("\n").strip
+          image_list.empty? ? image_list : image_list + "\n"
+        }
+        std.su_put "", tmpfile_xc = "/tmp/xen_cpus.#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", '/tmp/', :mode=>0644, :proc => Proc.new { |from, host|
+          image_list = xen_images_list[host].collect { |ar| ar[1] }.join("\n").strip
+          image_list.empty? ? image_list : image_list + "\n"
+        }
+
+        run <<-EOF
+          cat #{tmpfile_xi} | while read xen_image opts ; do {
+            [ -e /etc/xen/${xen_image}.cfg -o -z "${xen_image}" ] || echo sudo /usr/bin/xen-create-image ${opts} ;
+            [ -e /etc/xen/${xen_image}.cfg -o -z "${xen_image}" ] || sudo /usr/bin/xen-create-image ${opts} ;
+          } ; done
+EOF
+        run <<-EOF
+          cat #{tmpfile_xc} | while read xen_image vcpus cpus ; do {
+            tmpfile="/tmp/.${xen_image}.xen_config.$(date +"%Y%m%d%H%M%S").txt" ;
+            [ -z "${vcpus}" -a -z "${cpus}" ] || cat /etc/xen/${xen_image}.cfg > ${tmpfile} ;
+            [ -z "${vcpus}" -a -z "${cpus}" ] || echo >> ${tmpfile} ;
+            [ -z "${vcpus}" ] || echo "vcpus = '${vcpus}'" >> ${tmpfile} ;
+            [ -z "${cpus}" ] || echo "cpus = '${cpus}'" >> ${tmpfile} ;
+            [ -z "${vcpus}" -a -z "${cpus}" ] || sudo mv ${tmpfile} /etc/xen/${xen_image}.cfg ;
+          } ; done
+EOF
+        sudo "rm -f #{tmpfile_xi} #{tmpfile_xc}"
         top.deprec.xen.auto_start_images
       end
 
       # Same explanation as for create_images, but in this case for registering images to be auto-started at host sys boot up
       desc "Make links for xen image configs to be started automatically"
       task :auto_start_images, :roles => :dom0 do
-        handle_xen_images do |xen_image|
-          cmd = "sh -c \"ln -nsf /etc/xen/#{xen_image[:hostname]}.cfg /etc/xen/auto/#{xen_image[:hostname]}.cfg\""
-          sudo cmd
+        do_xen_images = (ENV['ONLY'] || '').split(',')
+        xen_images_list = {}
+        find_servers.collect { |server| server.host }.each do |host|
+          scope host do
+            xen_images_list[host] = (xen_images || []).collect do |xen_image|
+                do_xen_images.size == 0 || do_xen_images.include?(xen_image[:hostname]) ? xen_image[:hostname] : nil
+              end.compact.join("\n").strip
+          end
         end
+
+        std.su_put "", tmpfile = "/tmp/xen_images.#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", '/tmp/', :mode=>0644, :proc => Proc.new { |from, host|
+          xen_images_list[host].empty? ? xen_images_list[host] : xen_images_list[host] + "\n"
+        }
+
+        run <<-EOF
+          cat #{tmpfile} | while read xen_image ; do {
+            [ -z "${xen_image}" ] || sudo ln -nsf /etc/xen/${xen_image}.cfg /etc/xen/auto/${xen_image}.cfg ;
+          } ; done
+EOF
+        sudo "rm -f #{tmpfile}"
       end
 
       # Same explanation as for create_images, but in this case for unregistering images to be auto-started at host sys boot up
       desc "Make links for xen image configs to be started automatically"
       task :undo_auto_start_images, :roles => :dom0 do
-        handle_xen_images do |xen_image|
-          cmd = "sh -c \"rm -f /etc/xen/auto/#{xen_image[:hostname]}.cfg\""
-          sudo cmd
+        do_xen_images = (ENV['ONLY'] || '').split(',')
+        xen_images_list = {}
+        find_servers.collect { |server| server.host }.each do |host|
+          scope host do
+            xen_images_list[host] = (xen_images || []).collect do |xen_image|
+                do_xen_images.size == 0 || do_xen_images.include?(xen_image[:hostname]) ? xen_image[:hostname] : nil
+              end.compact.join("\n").strip
+          end
         end
+
+        std.su_put "", tmpfile = "/tmp/xen_images.#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", '/tmp/', :mode=>0644, :proc => Proc.new { |from, host|
+          xen_images_list[host].empty? ? xen_images_list[host] : xen_images_list[host] + "\n"
+        }
+
+        run <<-EOF
+          cat #{tmpfile} | while read xen_image ; do {
+            [ -z "${xen_image}" ] || sudo rm -f /etc/xen/auto/${xen_image}.cfg ;
+          } ; done
+EOF
+        sudo "rm -f #{tmpfile}"
       end
 
       # Same explanation as for create_images, but in this case for starting images
       desc "Start Xen images"
       task :start_images, :roles => :dom0 do
-        handle_xen_images do |xen_image|
-          cmd = "sh -c '/usr/sbin/xm create #{xen_image[:hostname]}.cfg 1>/dev/null ; true'"
-          sudo cmd
+        do_xen_images = (ENV['ONLY'] || '').split(',')
+        xen_images_list = {}
+        find_servers.collect { |server| server.host }.each do |host|
+          scope host do
+            xen_images_list[host] = (xen_images || []).collect do |xen_image|
+                do_xen_images.size == 0 || do_xen_images.include?(xen_image[:hostname]) ? xen_image[:hostname] : nil
+              end.compact.join("\n").strip
+          end
         end
+
+        std.su_put "", tmpfile = "/tmp/xen_images.#{Time.now.strftime("%Y%m%d%H%M%S")}.txt", '/tmp/', :mode=>0644, :proc => Proc.new { |from, host|
+          xen_images_list[host].empty? ? xen_images_list[host] : xen_images_list[host] + "\n"
+        }
+
+        run <<-EOF
+          cat #{tmpfile} | while read xen_image ; do {
+            [ -z "${xen_image}" ] || sudo /usr/sbin/xm create ${xen_image}.cfg 1>/dev/null ;
+          } ; done
+EOF
+        sudo "rm -f #{tmpfile}"
       end
 
       # show configs of all registered VMs on host system, use grep to get certain info fields
