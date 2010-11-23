@@ -13,6 +13,13 @@ module Deprec2
     ENV['ROLES'] = old_roles.to_s unless ENV['HOSTS']
   end
   
+  def filter_hosts(hostfilter)
+    old_hostfilter = ENV['HOSTFILTER']
+    ENV['HOSTFILTER'] = hostfilter.to_s
+    yield
+    ENV['HOSTFILTER'] = old_hostfilter.to_s
+  end     
+  
   # Temporarily ignore ROLES and HOSTS
   def ignoring_roles_and_hosts
     old_roles = ENV['ROLES']
