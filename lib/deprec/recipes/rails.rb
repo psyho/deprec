@@ -141,6 +141,10 @@ Capistrano::Configuration.instance(:must_exist).load do
 
       desc "Push out config files for rails app."
       task :config do
+        config_web_app_services
+      end
+      
+      task :config_web_app_services, :roles => [ :web, :passenger ] do
         top.deprec.web.config_project if web_choice.to_s != 'none'
         top.deprec.app.config_project if app_choice.to_s != 'none'
       end
@@ -243,11 +247,15 @@ Capistrano::Configuration.instance(:must_exist).load do
       
       desc "Activate web, app and monit"
       task :activate_services do
-        top.deprec.web.activate if web_choice.to_s != 'none'
-        top.deprec.app.activate if app_choice.to_s != 'none'
+        top.deprec.rails.activate_web_app_services
         top.deprec.monit.activate if use_monit # FIXME: should be generic namespace monitoring, with :none option
       end
-
+      
+      task :activate_web_app_services, :roles => [ :web, :passenger ] do
+        top.deprec.web.activate if web_choice.to_s != 'none'
+        top.deprec.app.activate if app_choice.to_s != 'none'
+      end
+      
       # database.yml stuff
       #
       # XXX DRY this up 
