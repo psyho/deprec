@@ -1,4 +1,8 @@
-require 'sha1'
+begin
+  require 'digest/sha1'
+rescue LoadError => e
+  require 'sha1'
+end
 
 # Copyright 2006-2009 by Mike Bailey. All rights reserved.
 Capistrano::Configuration.instance(:must_exist).load do 
