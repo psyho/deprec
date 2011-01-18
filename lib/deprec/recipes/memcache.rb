@@ -3,47 +3,81 @@ Capistrano::Configuration.instance(:must_exist).load do
   namespace :deprec do
     namespace :memcache do
       
-  set :memcache_ip, '127.0.0.1'
-  set :memcache_port, 11211
-  set :memcache_memory, 256
+      set :memcache_ip, '127.0.0.1'
+      set :memcache_port, 11211
+      set :memcache_memory, 256
   
-  # XXX needs thought/work
-  task :memcached_start do
-    run "memcached -d -m #{memcache_memory} -l #{memcache_ip} -p #{memcache_port}"
+      SYSTEM_CONFIG_FILES[:memcache] = [
+    
+        {:template => "memcache-init.d",
+         :path => '/etc/init.d/memcached',
+         :mode => 0755,
+         :owner => 'root:root'}
+     
+      ]
+  
+      task :install do
+        version = 'memcached-1.4.5'
+        set :src_package, {
+          :file => version + '.tar.gz',   
+          :md5sum => '583441a25f937360624024f2881e5ea8  memcached-1.4.5.tar.gz', 
+          :dir => version,  
+          :url => "http://memcached.googlecode.com/files/#{version}.tar.gz",
+          :unpack => "tar zxf #{version}.tar.gz;",
+          :configure => %w{
+            ./configure
+            --prefix=/usr/local 
+            ;
+            }.reject{|arg| arg.match '#'}.join(' '),
+          :make => 'make;',
+          :install => 'make install;'
+        }
+        apt.install( {:base => %w(libevent-dev)}, :stable )
+        deprec.download_src(src_package, src_dir)
+        deprec.install_from_src(src_package, src_dir)
+      end
+  
+      desc "Generate memcached configs"
+      task :config_gen do
+        SYSTEM_CONFIG_FILES[:memcache].each do |file|
+         deprec2.render_template(:memcache, file)
+        end
+      end
+
+      desc "Push memcached config files (system & project level) to server"
+      task :config, :roles => :memcached do
+        deprec2.push_configs(:memcache, SYSTEM_CONFIG_FILES[:memcache])
+        reload
+      end
+
+      desc "Start memcached"
+      task :start, :roles => :memcached do
+        run "#{sudo} /etc/init.d/memcached start"
+      end
+  
+      desc "Stop memcached"
+      task :stop, :roles => :memcached do
+        run "#{sudo} /etc/init.d/memcached stop"
+      end
+  
+      desc "Restart memcached"
+      task :restart, :roles => :memcached do
+        run "#{sudo} /etc/init.d/memcached restart"
+      end
+  
+      desc "Reload memcached"
+      task :reload, :roles => :memcached do
+        run "#{sudo} /etc/init.d/memcached force-reload"
+      end
+  
+      task :activate, :roles => :memcached do
+        run "#{sudo} update-rc.d memcached defaults"
+      end  
+  
+      task :deactivate, :roles => :memcached do
+        run "#{sudo} update-rc.d -f memcached remove"
+      end
+  
+    end
   end
-  
-  # XXX needs thought/work
-  task :memcached_stop do
-    run "killall memcached"
-  end
-  
-  # XXX needs thought/work
-  task :memcached_restart do
-    memcached_stop
-    memcached_start
-  end
-  
-  task :install_memcached do
-    version = 'memcached-1.2.2'
-    set :src_package, {
-      :file => version + '.tar.gz',   
-      :md5sum => 'a08851f7fa7b15e92ee6320b7a79c321  memcached-1.2.2.tar.gz', 
-      :dir => version,  
-      :url => "http://www.danga.com/memcached/dist/#{version}.tar.gz",
-      :unpack => "tar zxf #{version}.tar.gz;",
-      :configure => %w{
-        ./configure
-        --prefix=/usr/local 
-        ;
-        }.reject{|arg| arg.match '#'}.join(' '),
-      :make => 'make;',
-      :install => 'make install;',
-      :post_install => 'install -b scripts/memcached-init /etc/init.d/memcached;'
-    }
-    apt.install( {:base => %w(libevent-dev)}, :stable )
-    deprec.download_src(src_package, src_dir)
-    deprec.install_from_src(src_package, src_dir)
-  end
-end end
-  
 end
