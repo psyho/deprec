@@ -53,7 +53,16 @@ module Gem
   # +packages+ can be a single string or an array of strings.
   #  
   def install(packages, version=nil)
-    send(run_method,"#{GEM_INSTALL} #{if version then '-v '+version.to_s end} #{packages.to_a.join(' ')}")
+    send(run_method,"#{GEM_INSTALL} #{if version then '-v '+version.to_s end} #{Array(packages).join(' ')}")
+  end
+
+  # Uninstalls the gems detailed in +packages+, selecting version +version+ if
+  # specified.
+  #
+  # +packages+ can be a single string or an array of strings.
+  #  
+  def uninstall(packages, version=nil)
+    send(run_method,"#{GEM_UNINSTALL} #{if version then '-v '+version.to_s end} #{Array(packages).join(' ')}")
   end
 
   # Uninstalls the gems detailed in +packages+, selecting version +version+ if
