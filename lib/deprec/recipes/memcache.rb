@@ -16,7 +16,7 @@ Capistrano::Configuration.instance(:must_exist).load do
      
       ]
   
-      task :install do
+      task :install, :roles => :memcached do
         version = 'memcached-1.4.5'
         set :src_package, {
           :file => version + '.tar.gz',   
