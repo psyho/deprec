@@ -3,9 +3,12 @@ Capistrano::Configuration.instance(:must_exist).load do
   namespace :deprec do
     namespace :memcache do
       
-      set :memcache_ip, '127.0.0.1'
+      set :memcache_ip, 'INDRR_ANY'
       set :memcache_port, 11211
-      set :memcache_memory, 256
+      set :memcache_memory, 64
+      set :memcache_factor, 1.25
+      set :memcache_minsize, 48
+      set :memcache_conn, 1024
   
       SYSTEM_CONFIG_FILES[:memcache] = [
     
@@ -16,7 +19,7 @@ Capistrano::Configuration.instance(:must_exist).load do
      
       ]
   
-      task :install do
+      task :install, :roles => :memcached do
         version = 'memcached-1.4.5'
         set :src_package, {
           :file => version + '.tar.gz',   
