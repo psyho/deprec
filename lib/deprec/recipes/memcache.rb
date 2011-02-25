@@ -24,7 +24,7 @@ Capistrano::Configuration.instance(:must_exist).load do
       set :memcache_no_cas, false # -C -- memcached default is to use CAS
       
       MEMCACHED_BOOLEAN_OPTIONS = {
-        :memcache_no_cas => :C
+        :memcache_no_cas => :C,
         :memcache_large_memory_pages => :L,
         :memcache_lock_down_paged_mem => :k,
         :memcache_error_on_mem_exhausted => :M,
