@@ -36,8 +36,8 @@ Capistrano::Configuration.instance(:must_exist).load do
           :install => 'make install;'
         }
         apt.install( {:base => %w(libevent-dev)}, :stable )
-        deprec.download_src(src_package, src_dir)
-        deprec.install_from_src(src_package, src_dir)
+        deprec2.download_src(src_package, src_dir)
+        deprec2.install_from_src(src_package, src_dir)
       end
   
       desc "Generate memcached configs"
