@@ -15,7 +15,7 @@ set -e
 case "$1" in
     start)
         echo -n "Starting $DESC: "
-        start-stop-daemon --start --quiet --exec $DAEMONBOOTSTRAP -- -d -m <%= memcache_memory %> -l <%= memcache_ip %> -p <%= memcache_port %>
+        start-stop-daemon --start --quiet --exec $DAEMONBOOTSTRAP -- -d -m <%= memcache_memory %> -l <%= memcache_ip %> -p <%= memcache_port %> -f <%= memcache_factor %> -s <%= memcache_minsize %> -c <%= memcache_conn %>
         echo "$NAME."
         ;;
     stop)
