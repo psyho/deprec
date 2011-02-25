@@ -1,36 +1,61 @@
 #!/bin/sh
 
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+<%
+
+boolean_arguments = MEMCACHED_BOOLEAN_OPTIONS.collect do |name, opt|
+  if fetch(name)
+		"-#{opt}"
+	end
+end.compact.join(' ')
+
+value_arguments = MEMCACHED_VALUE_OPTIONS.collect do |name, opt|
+  if (value=fetch(name))
+		"-#{opt} #{value}"
+	end
+end.compact.join(' ')
+
+arguments = [ [ "-d", "-P $PIDFILE" ], boolean_arguments, value_arguments ].flatten.join(' ')
+
+%>PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/local/bin/memcached
-DAEMONBOOTSTRAP=/usr/local/share/memcached/scripts/start-memcached
 NAME=memcached
 DESC=memcached
 PIDFILE=/var/run/$NAME.pid
 
 test -x $DAEMON || exit 0
-test -x $DAEMONBOOTSTRAP || exit 0
 
 set -e
+
+start () {
+    start-stop-daemon --start --quiet --exec $DAEMON -- <%= arguments %>
+}
+
+stop () {
+    start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE --exec $DAEMON
+    rm -f $PIDFILE
+}
+
+restart () {
+	stop
+	sleep 1
+	start
+}
 
 case "$1" in
     start)
         echo -n "Starting $DESC: "
-        start-stop-daemon --start --quiet --exec $DAEMONBOOTSTRAP -- -d -m <%= memcache_memory %> -l <%= memcache_ip %> -p <%= memcache_port %> -f <%= memcache_factor %> -s <%= memcache_minsize %> -c <%= memcache_conn %>
+		start
         echo "$NAME."
         ;;
     stop)
         echo -n "Stopping $DESC: "
-        start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE --exec $DAEMON
+		stop
         echo "$NAME."
-        rm -f $PIDFILE
         ;;
 
     restart|force-reload)
         echo -n "Restarting $DESC: "
-        start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE
-        rm -f $PIDFILE
-        sleep 1
-        start-stop-daemon --start --quiet --exec $DAEMONBOOTSTRAP
+		restart
         echo "$NAME."
         ;;
     *)
