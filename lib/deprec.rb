@@ -53,4 +53,30 @@ Capistrano::Configuration.instance.deprec.namespaces.keys.each do |ns_name|
       end
     end
   end
+  unless ns.respond_to?(:diff_config)
+    Capistrano::Configuration.instance.namespace :deprec do
+      namespace ns_name do
+        task :diff_config_project do
+          return unless defined?(PROJECT_CONFIG_FILES) && PROJECT_CONFIG_FILES[ns_name]
+          
+          PROJECT_CONFIG_FILES[ns_name].each do |config_file|
+            deprec2.compare_files(ns_name, config_file[:template], config_file[:path])
+          end
+        end
+
+        task :diff_config_system do
+          return unless defined?(SYSTEM_CONFIG_FILES) && SYSTEM_CONFIG_FILES[ns_name]
+
+          SYSTEM_CONFIG_FILES[ns_name].each do |config_file|
+            deprec2.compare_files(ns_name, config_file[:template], config_file[:path])
+          end
+        end
+
+        task :diff_config do
+          diff_config_project
+          diff_config_system
+        end
+      end
+    end
+  end
 end

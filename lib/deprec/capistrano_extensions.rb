@@ -26,6 +26,21 @@ module Deprec2
   
   DEPREC_TEMPLATES_BASE = File.join(File.dirname(__FILE__), 'templates')
 
+  def compare_files(app, local_file, remote_file)
+    stage = exists?(:stage) ? fetch(:stage).to_s : ''
+
+    run "cat #{remote_file}" do |channel, stream, data|
+      local_file_full_path = local_file[0,1] == "/" ? local_file : 
+        (File.exists?(File.join('config', stage, channel.properties[:host], app.to_s, local_file)) ? File.join('config', stage, channel.properties[:host], app.to_s, local_file) : File.join('config', stage, app.to_s, local_file))    
+      tmp_file = File.join('/', 'tmp', "#{(channel.properties[:host] + remote_file).gsub(/\/\./, '_')}_#{Time.now.strftime("%Y%m%d%H%M%S")}.tmp")
+      File.open(tmp_file, "w") do |f|
+        f.write data
+      end
+      puts `diff #{local_file} #{tmp_file}`
+      FileUtils.rm_f(tmp_file)
+    end
+  end
+
   # Render template (usually a config file) 
   # 
   # Usually we render it to a file on the local filesystem.
